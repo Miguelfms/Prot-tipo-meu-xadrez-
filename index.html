@@ -1,0 +1,2688 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Meu Xadrez</title>
+<style>html,body{background:#0d1411;color:#ecebe4;margin:0}</style><style>
+/* ==========================================================================
+   style.css — Tema "clube de xadrez": verde-floresta escuro + dourado.
+   Abordagem mobile-first: o CSS base serve para o celular; as regras dentro de
+   @media (min-width: …) ampliam o layout para tablets e computadores.
+   ========================================================================== */
+
+:root {
+  /* Cores do tema (mude aqui para trocar o visual do site inteiro) */
+  --bg: #0d1411;
+  --bg-2: #121b17;
+  --surface: #17221d;
+  --surface-2: #1e2c26;
+  --line: #2a3b33;
+  --text: #ecebe4;
+  --muted: #9bab9f;
+  --gold: #d4af37;
+  --gold-2: #f0d77a;
+  --green: #4f9a6a;
+  --danger: #d9534f;
+  /* Tabuleiro */
+  --sq-light: #e8dcb5;
+  --sq-dark: #4e7b5a;
+  --radius: 14px;
+  --nav-h: 62px;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: radial-gradient(1200px 600px at 50% -10%, #1a2a22 0%, var(--bg) 60%) fixed;
+  background-color: var(--bg);   /* o atalho acima zera a cor; reafirma o fundo escuro */
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* espaço para o menu inferior + área segura do celular */
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  min-height: 100vh;
+}
+h1, h2, h3 { font-family: Georgia, "Times New Roman", serif; line-height: 1.2; margin: 0 0 .4em; }
+h1 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+h2 { font-size: 1.2rem; }
+p { margin: 0 0 .8em; }
+a { color: var(--gold-2); }
+[hidden] { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: .88rem; }
+.sr, .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.skip:focus { position: fixed; top: 8px; left: 8px; z-index: 200; background: var(--gold); color: #000; padding: 8px 12px; border-radius: 8px; }
+:focus-visible { outline: 3px solid var(--gold-2); outline-offset: 2px; }
+
+/* ---------- Estrutura ---------- */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(13, 20, 17, .85); backdrop-filter: blur(8px);
+  position: sticky; top: 0; z-index: 20;
+}
+.brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); font: 700 1.15rem Georgia, serif; }
+.topnav { display: none; gap: 4px; }
+.topnav a { color: var(--muted); text-decoration: none; padding: 8px 14px; border-radius: 999px; font-weight: 600; }
+.topnav a:hover { color: var(--text); background: var(--surface); }
+.topnav a.on { color: #14110a; background: var(--gold); }
+
+main { max-width: 1120px; margin: 0 auto; padding: 14px 12px 24px; outline: none; }
+.view { animation: fade .25s ease; }
+@keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.page-head { margin-bottom: 12px; }
+.page-head p { margin: 0; }
+.back { display: inline-block; margin: 4px 0 10px; text-decoration: none; font-weight: 600; }
+
+/* Menu inferior (celular) */
+.tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(15, 24, 20, .96); border-top: 1px solid var(--line); backdrop-filter: blur(10px);
+}
+.tabbar a { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; color: var(--muted); text-decoration: none; font-size: .72rem; font-weight: 600; }
+.tabbar .t-ico { width: 26px; height: 26px; }
+.tabbar a.on { color: var(--gold); }
+
+/* ---------- Botões e campos ---------- */
+.btn {
+  appearance: none; border: 1px solid var(--line); background: var(--surface-2); color: var(--text);
+  font: 600 .95rem system-ui, sans-serif; min-height: 44px; padding: 8px 14px; border-radius: 12px;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background .15s, transform .05s, border-color .15s;
+}
+.btn:hover:not(:disabled) { background: #26372f; border-color: #3a5146; }
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.primary { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: #1a1405; border-color: #a98a22; }
+.btn.primary:hover:not(:disabled) { background: linear-gradient(180deg, #f6e08e, #dcb83f); }
+.btn.danger { background: #3a1f1f; border-color: #6b2d2d; color: #ffb4b0; }
+.btn.danger:hover:not(:disabled) { background: #4a2525; }
+.btn.sm { min-height: 38px; padding: 4px 12px; font-size: .88rem; }
+.field { display: block; margin: 10px 0; }
+.field > span { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+input[type="text"], input[type="search"], textarea {
+  width: 100%; background: var(--bg-2); color: var(--text); border: 1px solid var(--line);
+  border-radius: 12px; padding: 11px 12px; font: inherit; min-height: 44px;
+}
+textarea { resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; }
+input:focus, textarea:focus { outline: 2px solid var(--gold); border-color: transparent; }
+.field-error { color: #ff9b96; font-size: .9rem; margin: 6px 0; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+
+/* ---------- Início ---------- */
+.hero { padding: 18px 4px 10px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .16em; font-size: .72rem; color: var(--gold); font-weight: 700; margin-bottom: 8px; }
+.hero h1 em { color: var(--gold-2); font-style: italic; }
+.lead { color: var(--muted); font-size: 1.05rem; max-width: 46ch; }
+.cards { display: grid; gap: 12px; margin-top: 10px; }
+.card {
+  position: relative; overflow: hidden; display: block; text-decoration: none; color: var(--text);
+  background: linear-gradient(160deg, var(--surface-2), var(--surface)); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 18px 18px 16px;
+  transition: transform .15s, border-color .15s;
+}
+.card:hover { transform: translateY(-2px); border-color: var(--gold); }
+.card::after { /* textura de tabuleiro, só decoração */
+  content: ""; position: absolute; right: -30px; top: -30px; width: 130px; height: 130px; opacity: .08;
+  background: conic-gradient(#fff 25%, transparent 0 50%, #fff 0 75%, transparent 0) 0 0 / 32px 32px; transform: rotate(12deg);
+}
+.card .ico { width: 44px; height: 44px; display: block; margin: 0 0 6px -4px; }
+.card p { color: var(--muted); font-size: .95rem; }
+.card .go { color: var(--gold-2); font-weight: 700; font-size: .92rem; }
+.resume { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 6px 0 4px; padding: 14px 16px; border: 1px dashed var(--gold); border-radius: var(--radius); background: rgba(212, 175, 55, .07); }
+
+/* ---------- Tabuleiro ---------- */
+.board {
+  display: grid; grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(8, 1fr);
+  width: min(100%, 76vh); aspect-ratio: 1; margin: 0 auto;
+  border-radius: 8px; overflow: hidden; border: 3px solid #0a0f0c; box-shadow: 0 10px 30px rgba(0, 0, 0, .5), 0 0 0 1px var(--line);
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+}
+.board.readonly { touch-action: auto; cursor: default; }
+.sq { position: relative; display: grid; place-items: center; }
+.sq.light { background-color: var(--sq-light); }
+.sq.dark { background-color: var(--sq-dark); }
+.sq.last { background-image: linear-gradient(rgba(212, 175, 55, .38), rgba(212, 175, 55, .38)); }
+.sq.selected { background-image: linear-gradient(rgba(240, 215, 122, .75), rgba(240, 215, 122, .75)); }
+.sq.check { background-image: radial-gradient(circle, rgba(235, 50, 50, .95) 0%, rgba(235, 50, 50, .55) 45%, transparent 75%); }
+.sq.hover { box-shadow: inset 0 0 0 4px rgba(240, 215, 122, .9); }
+.sq.target::after { content: ""; position: absolute; width: 30%; height: 30%; border-radius: 50%; background: rgba(12, 30, 20, .32); pointer-events: none; }
+.sq.capture::after { width: 90%; height: 90%; background: none; border: 5px solid rgba(12, 30, 20, .3); }
+.coord { position: absolute; font: 700 clamp(9px, 2.5vw, 12px)/1 system-ui, sans-serif; pointer-events: none; opacity: .85; }
+.coord.rank { top: 3px; left: 4px; }
+.coord.file { bottom: 2px; right: 4px; }
+.sq.light .coord { color: var(--sq-dark); }
+.sq.dark .coord { color: var(--sq-light); }
+
+/* Peças (cores vêm das variáveis --pf = preenchimento e --ps = contorno) */
+.piece { width: 92%; height: 92%; pointer-events: none; filter: drop-shadow(0 1.5px 1px rgba(0, 0, 0, .35)); }
+.piece.w { --pf: #f7f0dc; --ps: #1b1b1d; }
+.piece.b { --pf: #33343a; --ps: #e6d8a4; }
+.pf { fill: var(--pf); stroke: var(--ps); stroke-width: 3.2; stroke-linejoin: round; }
+.pd { fill: none; stroke: var(--ps); stroke-width: 2.6; stroke-linecap: round; }
+.drag-ghost { position: fixed; left: 0; top: 0; z-index: 90; pointer-events: none; filter: drop-shadow(0 8px 8px rgba(0, 0, 0, .45)); }
+.drag-ghost .piece { width: 100%; height: 100%; }
+
+/* ---------- Modo Livre / revisão ---------- */
+.play-layout { display: grid; gap: 14px; }
+.status {
+  display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 8px 12px; margin: 0 auto 10px; width: min(100%, 76vh);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px; font-weight: 600;
+}
+.status .dot { flex: none; width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--gold); background: #f7f0dc; }
+.status .dot.b { background: #26272b; }
+.status.alert { border-color: #c0443f; background: #2b1717; }
+.status.end { border-color: var(--gold); background: #2a2410; color: var(--gold-2); }
+.toolbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(100%, 76vh); margin: 12px auto 0; }
+.toolbar .btn { padding: 8px 6px; font-size: .88rem; }
+.nav-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: min(100%, 76vh); margin: 12px auto 0; }
+.nav-row .btn { font-size: 1.2rem; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; margin-bottom: 12px; }
+.panel > h2 { margin-bottom: 8px; }
+summary { cursor: pointer; font-weight: 700; min-height: 32px; }
+.move-box { max-height: 220px; overflow-y: auto; scroll-behavior: smooth; }
+.moves { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.moves li { display: grid; grid-template-columns: 2.4em 1fr 1fr; gap: 4px; align-items: center; }
+.moves .n { color: var(--muted); font-size: .9rem; }
+.mv { appearance: none; border: 0; background: transparent; color: var(--text); font: 600 1rem ui-monospace, Menlo, Consolas, monospace; text-align: left; padding: 6px 8px; border-radius: 8px; cursor: pointer; min-height: 34px; }
+.mv:hover { background: var(--surface-2); }
+.mv.cur { background: var(--gold); color: #1a1405; }
+.mv.ph { color: var(--muted); cursor: default; }
+
+/* ---------- Aberturas ---------- */
+.filters { display: grid; gap: 10px; margin-bottom: 14px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { appearance: none; border: 1px solid var(--line); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 8px 16px; font: 700 .9rem system-ui; cursor: pointer; min-height: 40px; }
+.chip.on { background: var(--gold); color: #1a1405; border-color: var(--gold); }
+.cat-title { font: 700 .8rem system-ui; text-transform: uppercase; letter-spacing: .12em; color: var(--gold); margin: 18px 0 8px; }
+.op-grid { display: grid; gap: 10px; }
+.op-card { display: block; text-decoration: none; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; transition: border-color .15s, transform .15s; }
+.op-card:hover { border-color: var(--gold); transform: translateY(-1px); }
+.op-card h3 { margin: 0 0 4px; font-size: 1.1rem; }
+.op-card p { margin: 0; color: var(--muted); font-size: .92rem; }
+.tag { display: inline-block; font: 700 .68rem system-ui; text-transform: uppercase; letter-spacing: .08em; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); margin-right: 6px; vertical-align: middle; }
+.tag.gambito { color: var(--gold-2); border-color: #6f5c1c; background: rgba(212, 175, 55, .1); }
+.tag.abertura { color: #9fd9b4; border-color: #2f5c40; background: rgba(79, 154, 106, .12); }
+.empty { text-align: center; padding: 34px 16px; border: 1px dashed var(--line); border-radius: var(--radius); color: var(--muted); }
+.variants { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin: 6px 0 12px; }
+.variants .chip { white-space: nowrap; }
+.plans { display: grid; gap: 8px; margin-top: 10px; }
+.plans div { background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: .93rem; }
+.plans b { color: var(--gold-2); display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 2px; }
+.caption { text-align: center; width: min(100%, 76vh); margin: 10px auto 0; min-height: 3em; color: var(--muted); }
+.caption strong { color: var(--gold-2); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.1rem; }
+
+/* ---------- Partidas salvas ---------- */
+.game-list { display: grid; gap: 10px; }
+.game { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
+.game h3 { margin: 0 0 2px; font-size: 1.1rem; word-break: break-word; }
+.game .meta { color: var(--muted); font-size: .88rem; margin-bottom: 10px; }
+.badge { display: inline-block; font: 700 .72rem system-ui; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); color: var(--text); margin-left: 4px; }
+.notice { background: #2b2410; border: 1px solid #6f5c1c; color: var(--gold-2); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; font-size: .92rem; }
+.game-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.game-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* ---------- Janelas (modal) e avisos ---------- */
+.modal-back { position: fixed; inset: 0; z-index: 100; background: rgba(0, 0, 0, .6); display: grid; place-items: center; padding: 16px; animation: fade .15s; }
+.modal { width: min(100%, 420px); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: 0 20px 60px rgba(0, 0, 0, .6); }
+.modal h3 { margin-bottom: 8px; }
+.modal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.promo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+.promo-btn { appearance: none; background: var(--sq-dark); border: 2px solid var(--line); border-radius: 12px; padding: 6px 2px 4px; color: var(--text); font: 600 .75rem system-ui; cursor: pointer; display: grid; place-items: center; gap: 2px; min-height: 84px; }
+.promo-btn:hover, .promo-btn:focus-visible { border-color: var(--gold-2); }
+.promo-btn .piece { width: 56px; height: 56px; }
+#toasts { position: fixed; z-index: 120; left: 0; right: 0; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 14px); display: grid; justify-items: center; gap: 8px; pointer-events: none; padding: 0 12px; }
+.toast { background: #101a15; color: var(--text); border: 1px solid var(--gold); padding: 10px 16px; border-radius: 12px; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); animation: fade .2s; max-width: 480px; transition: opacity .3s; }
+.toast.erro { border-color: #c0443f; background: #2b1717; }
+.toast.out { opacity: 0; }
+
+/* ---------- Telas maiores ---------- */
+@media (min-width: 520px) {
+  .toolbar { grid-template-columns: repeat(6, 1fr); }
+  .toolbar .btn { flex-direction: column; gap: 0; font-size: .8rem; }
+}
+@media (min-width: 760px) {
+  .cards { grid-template-columns: repeat(3, 1fr); }
+  .op-grid { grid-template-columns: repeat(2, 1fr); }
+  .game-list { grid-template-columns: repeat(2, 1fr); }
+  .filters { grid-template-columns: 1fr auto; align-items: center; }
+}
+@media (min-width: 900px) {
+  body { padding-bottom: 24px; }
+  .tabbar { display: none; }
+  .topnav { display: flex; }
+  #toasts { bottom: 20px; }
+  main { padding: 22px 20px 40px; }
+  .play-layout { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 22px; }
+  .board, .status, .toolbar, .nav-row, .caption { width: min(100%, calc(100vh - 220px)); }
+  .move-box { max-height: 340px; }
+  .detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 22px; align-items: start; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+</style>
+
+  <!-- Some quando o site inicia. Se ficar na tela, o JavaScript foi bloqueado ou travou. -->
+  <div id="boot" style="padding:24px 16px;font:16px/1.5 system-ui,sans-serif;color:#ecebe4;background:#0d1411">
+    <strong style="color:#d4af37;font-size:20px">Meu Xadrez</strong><br>
+    Carregando… Se esta mensagem não sumir, o seu visualizador bloqueou o JavaScript.
+    Abra este arquivo diretamente no <b>Google Chrome</b> (não em pré-visualização de ZIP, e-mail, Drive ou WhatsApp).
+  </div>
+  <!-- Se algo falhar ao iniciar, mostra o erro na tela em vez de uma página em branco -->
+  <script>
+    window.addEventListener('error', function (e) {
+      if (document.getElementById('fatal')) return;
+      var d = document.createElement('div'); d.id = 'fatal'; d.setAttribute('role', 'alert');
+      d.style.cssText = 'position:fixed;left:12px;right:12px;top:12px;z-index:999;background:#2b1717;color:#ffd2cf;border:1px solid #c0443f;border-radius:12px;padding:12px 14px;font:14px system-ui,sans-serif';
+      d.textContent = 'Erro ao iniciar o site: ' + (e.message || 'desconhecido') + '. Use o arquivo index.html completo.';
+      (document.body || document.documentElement).appendChild(d);
+    });
+  </script>
+  <a class="skip" href="#app">Ir para o conteúdo</a>
+
+  <!-- Barra superior (no computador mostra o menu; no celular o menu fica embaixo) -->
+  <header class="topbar">
+    <a class="brand" href="#/" aria-label="Meu Xadrez — página inicial">
+      <svg viewBox="0 0 100 100" width="28" height="28" aria-hidden="true"><use href="#pc-n" style="--pf:#d4af37;--ps:#0d1411"/></svg>
+      <span>Meu Xadrez</span>
+    </a>
+    <nav class="topnav" aria-label="Seções">
+      <a href="#/livre" data-nav="livre">Modo Livre</a>
+      <a href="#/aberturas" data-nav="aberturas">Aberturas e Gambitos</a>
+      <a href="#/partidas" data-nav="partidas">Minhas Partidas</a>
+    </nav>
+  </header>
+
+  <main id="app" tabindex="-1">
+
+    <!-- ===================== INÍCIO ===================== -->
+    <section id="view-home" class="view" hidden>
+      <div class="hero">
+        <p class="eyebrow">Tabuleiro • Estudo • Memória</p>
+        <h1>Bem-vindo ao seu <em>clube de xadrez</em></h1>
+        <p class="lead">Jogue com as duas cores, aprenda aberturas e gambitos e guarde suas partidas para analisar depois.</p>
+      </div>
+      <div id="home-resume"></div>
+      <div class="cards">
+        <a class="card feature" href="#/livre">
+          <svg class="ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-n" style="--pf:#d4af37;--ps:#0d1411"/></svg>
+          <h2>Modo Livre</h2>
+          <p>Tabuleiro completo com todas as regras oficiais. Mova brancas e pretas, desfaça, refaça e salve.</p>
+          <span class="go">Jogar agora →</span>
+        </a>
+        <a class="card feature" href="#/aberturas">
+          <svg class="ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-b" style="--pf:#d4af37;--ps:#0d1411"/></svg>
+          <h2>Aberturas e Gambitos</h2>
+          <p id="home-open-count">Aprenda as ideias por trás dos primeiros lances, passo a passo.</p>
+          <span class="go">Estudar →</span>
+        </a>
+        <a class="card feature" href="#/partidas">
+          <svg class="ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-r" style="--pf:#d4af37;--ps:#0d1411"/></svg>
+          <h2>Minhas Partidas</h2>
+          <p id="home-games-count">Suas partidas salvas ficam guardadas neste navegador.</p>
+          <span class="go">Abrir →</span>
+        </a>
+        <a class="card feature" href="#/laboratorio">
+          <svg class="ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-q" style="--pf:#d4af37;--ps:#0d1411"/></svg>
+          <h2>Laboratório ♟</h2>
+          <p>Enfrente uma IA local, resolva um desafio, importe PGN e explore posições.</p>
+          <span class="go">Explorar ferramentas →</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===================== LABORATÓRIO ===================== -->
+    <section id="view-laboratorio" class="view" hidden>
+      <div class="page-head">
+        <a class="back" href="#/">← Início</a>
+        <h1>Laboratório de Xadrez</h1>
+        <p class="muted">Ferramentas extras para jogar, estudar e investigar posições.</p>
+      </div>
+      <div class="lab-tabs" role="tablist" aria-label="Ferramentas do laboratório">
+        <button class="btn primary" data-lab-tab="ia" type="button">🤖 Jogar contra IA</button>
+        <button class="btn" data-lab-tab="desafio" type="button">🎯 Desafio</button>
+        <button class="btn" data-lab-tab="pgn" type="button">📄 PGN</button>
+        <button class="btn" data-lab-tab="editor" type="button">🧩 Posição</button>
+        <button class="btn" data-lab-tab="stats" type="button">📊 Estatísticas</button>
+        <button class="btn" data-lab-tab="analise" type="button">🔎 Análise</button>
+      </div>
+      <section class="lab-pane" data-lab-pane="ia">
+        <div class="panel">
+          <h2>Jogar contra a IA local</h2>
+          <p class="muted small">Esta primeira versão usa um buscador simples embutido no site, não o Stockfish. Os níveis são aproximados e servem para começar sem baixar motores externos.</p>
+          <div class="lab-controls">
+            <label class="field"><span>Dificuldade</span><select id="lab-ai-level"><option value="1">1 · Iniciante</option><option value="2">2 · Intermediário</option><option value="3">3 · Avançado</option><option value="4">4 · Mestre</option></select></label>
+            <label class="field"><span>Você joga de</span><select id="lab-ai-color"><option value="w">Brancas</option><option value="b">Pretas</option></select></label>
+          </div>
+          <div class="lab-clock-controls">
+            <label class="field"><span>Tempo por jogador</span><select id="lab-clock-setting"><option value="0">Sem relógio</option><option value="180">3 minutos</option><option value="300" selected>5 minutos</option><option value="600">10 minutos</option></select></label>
+            <div class="lab-clocks" aria-live="polite"><div class="lab-clock" id="lab-clock-black"><span>Pretas</span><strong>05:00</strong></div><div class="lab-clock" id="lab-clock-white"><span>Brancas</span><strong>05:00</strong></div></div>
+          </div>
+          <div id="lab-ai-status" class="status" role="status" aria-live="polite">Prepare-se para a partida.</div>
+          <div id="lab-ai-board"></div>
+          <div class="toolbar lab-toolbar">
+            <button class="btn" id="lab-ai-undo" type="button">↶ Desfazer</button>
+            <button class="btn" id="lab-ai-flip" type="button">⇅ Girar</button>
+            <button class="btn" id="lab-ai-new" type="button">＋ Nova partida</button>
+            <button class="btn primary" id="lab-ai-save" type="button">✓ Salvar partida</button>
+          </div>
+          <div class="panel lab-inner"><h2>Lances</h2><div id="lab-ai-moves" class="move-box"></div></div>
+        </div>
+      </section>
+      <section class="lab-pane" data-lab-pane="desafio" hidden>
+        <div class="panel">
+          <h2>Desafio tático: mate em 1</h2>
+          <p>As brancas jogam. Encontre o lance que dá xeque-mate em um movimento.</p>
+          <p class="muted small">Dica: procure uma casa onde a dama dê xeque e controle as fugas do rei.</p>
+          <div id="lab-puzzle-status" class="status" role="status">Encontre o mate!</div>
+          <div id="lab-puzzle-board"></div>
+          <div class="row"><button class="btn" id="lab-puzzle-reset" type="button">↻ Tentar de novo</button><button class="btn primary" id="lab-puzzle-hint" type="button">💡 Mostrar dica</button><button class="btn" id="lab-puzzle-next" type="button">Próximo desafio</button></div>
+          <p class="muted small" id="lab-puzzle-explain"></p>
+        </div>
+      </section>
+      <section class="lab-pane" data-lab-pane="pgn" hidden>
+        <div class="panel">
+          <h2>Importar e exportar PGN</h2>
+          <p class="muted small">Cole uma partida em PGN para importá-la. A exportação usa a partida da IA atual ou uma partida salva selecionada.</p>
+          <label class="field"><span>Partidas salvas</span><select id="lab-pgn-game"><option value="current">Partida atual contra IA</option></select></label>
+          <div class="row"><button class="btn" id="lab-pgn-export" type="button">Exportar para campo</button><button class="btn" id="lab-pgn-download" type="button">Baixar .pgn</button><button class="btn primary" id="lab-pgn-import" type="button">Importar para Minhas Partidas</button></div>
+          <label class="field"><span>Conteúdo PGN</span><textarea id="lab-pgn-text" rows="10" spellcheck="false" placeholder="Cole aqui uma partida PGN..."></textarea></label>
+          <p class="muted small">A importação desta versão aceita partidas com lances legais em notação algébrica. Comentários e variantes serão ignorados.</p>
+        </div>
+      </section>
+      <section class="lab-pane" data-lab-pane="editor" hidden>
+        <div class="panel">
+          <h2>Editor de posições por FEN</h2>
+          <p class="muted small">Cole uma FEN para abrir essa posição no Modo Livre. A edição visual peça por peça fica para uma próxima etapa.</p>
+          <label class="field"><span>Posição FEN</span><textarea id="lab-fen" rows="3" spellcheck="false">rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</textarea></label>
+          <div class="row"><button class="btn" id="lab-fen-start" type="button">Usar posição inicial</button><button class="btn primary" id="lab-fen-open" type="button">Abrir no Modo Livre</button></div>
+          <p id="lab-fen-message" class="muted small" role="status"></p>
+          <hr class="lab-rule">
+          <h2>Editor visual de tabuleiro</h2>
+          <p class="muted small">Escolha uma peça e toque numa casa para colocá-la. Use “Apagar peça” para limpar casas. Depois, gere a FEN e abra a posição no Modo Livre.</p>
+          <label class="field"><span>Peça para colocar</span><select id="lab-editor-piece">
+            <option value="wK">Rei branco</option><option value="wQ">Dama branca</option><option value="wR">Torre branca</option><option value="wB">Bispo branco</option><option value="wN">Cavalo branco</option><option value="wP">Peão branco</option>
+            <option value="bK">Rei preto</option><option value="bQ">Dama preta</option><option value="bR">Torre preta</option><option value="bB">Bispo preto</option><option value="bN">Cavalo preto</option><option value="bP">Peão preto</option>
+          </select></label>
+          <div id="lab-editor-board" class="editor-board-wrap"></div>
+          <div class="row"><button class="btn" id="lab-editor-clear" type="button">⌫ Apagar peça</button><button class="btn" id="lab-editor-reset" type="button">↻ Posição inicial</button></div>
+          <label class="field"><span>Quem joga?</span><select id="lab-editor-turn"><option value="w">Brancas</option><option value="b">Pretas</option></select></label>
+          <div class="row"><button class="btn" id="lab-editor-fen" type="button">Gerar FEN</button><button class="btn primary" id="lab-editor-open" type="button">Abrir posição</button></div>
+          <p id="lab-editor-message" class="muted small" role="status"></p>
+        </div>
+      </section>
+      <section class="lab-pane" data-lab-pane="analise" hidden>
+        <div class="panel">
+          <h2>Análise com motor de xadrez</h2>
+          <p>Envie uma posição ao analisador online do Lichess, que oferece análise com Stockfish. O motor roda no serviço externo, não dentro deste arquivo.</p>
+          <div class="status" role="status">Dica: carregue a posição atual da partida ou cole uma FEN para investigar um momento específico.</div>
+          <label class="field"><span>Posição FEN para analisar</span><textarea id="lab-analysis-fen" rows="3" spellcheck="false">rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1</textarea></label>
+          <div class="row">
+            <button class="btn" id="lab-analysis-current" type="button">Usar posição atual da IA</button>
+            <button class="btn" id="lab-analysis-saved" type="button">Usar partida salva</button>
+            <button class="btn" id="lab-analysis-start" type="button">Posição inicial</button>
+          </div>
+          <div class="row">
+            <button class="btn primary" id="lab-analysis-open" type="button">Abrir análise completa ↗</button>
+            <button class="btn" id="lab-analysis-cloud" type="button">Consultar Stockfish</button>
+            <button class="btn" id="lab-analysis-explorer" type="button">Explorar lances</button>
+            <button class="btn" id="lab-analysis-copy" type="button">Copiar FEN</button>
+          </div>
+          <p id="lab-analysis-message" class="muted small" role="status" aria-live="polite">A consulta Stockfish usa avaliações em cache do Lichess. Se a posição não estiver em cache, abra a análise completa para calcular no site externo.</p>
+          <div id="lab-analysis-results" class="panel" aria-live="polite"><p class="muted small">As avaliações e os lances sugeridos aparecerão aqui.</p></div>
+          <hr class="lab-rule">
+          <h3>Como analisar uma partida inteira</h3>
+          <ol>
+            <li>Abra a aba <strong>PGN</strong> e selecione a partida que deseja estudar.</li>
+            <li>Toque em <strong>Exportar para campo</strong> e depois copie o PGN.</li>
+            <li>Abra o <a href="https://lichess.org/analysis" target="_blank" rel="noopener noreferrer">analisador do Lichess</a> e importe ou cole a partida para ver os lances com o motor.</li>
+          </ol>
+          <p class="muted small">A consulta Stockfish mostra avaliações em cache, quando disponíveis, e o explorador consulta estatísticas de partidas. A análise profunda completa continua no Lichess. Essas consultas precisam de internet e podem falhar se o navegador bloquear a conexão.</p>
+        </div>
+      </section>
+      <section class="lab-pane" data-lab-pane="stats" hidden>
+        <div class="panel">
+          <h2>Suas estatísticas</h2>
+          <div id="lab-stats" class="lab-stats"></div>
+          <p class="muted small">Os números são calculados a partir das partidas que estão salvas neste navegador. Partidas não salvas não entram na conta.</p>
+          <div class="row"><button class="btn" id="lab-stats-refresh" type="button">↻ Atualizar estatísticas</button><button class="btn" id="lab-back-games" type="button">Ver partidas salvas</button></div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ===================== MODO LIVRE ===================== -->
+    <section id="view-livre" class="view" hidden>
+      <div class="page-head">
+        <h1>Modo Livre</h1>
+        <p class="muted" id="livre-sub">Mova as peças brancas e pretas. Toque na peça e depois na casa, ou arraste.</p>
+      </div>
+      <div class="play-layout">
+        <div class="board-col">
+          <div id="livre-status" class="status" role="status" aria-live="polite"></div>
+          <div id="livre-board"></div>
+          <div class="toolbar" role="toolbar" aria-label="Controles da partida">
+            <button class="btn" id="livre-undo" type="button"><span aria-hidden="true">↶</span> Desfazer</button>
+            <button class="btn" id="livre-redo" type="button"><span aria-hidden="true">↷</span> Refazer</button>
+            <button class="btn" id="livre-flip" type="button"><span aria-hidden="true">⇅</span> Girar</button>
+            <button class="btn" id="livre-restart" type="button"><span aria-hidden="true">⟲</span> Reiniciar</button>
+            <button class="btn" id="livre-new" type="button"><span aria-hidden="true">＋</span> Nova partida</button>
+            <button class="btn primary" id="livre-save" type="button"><span aria-hidden="true">✓</span> Salvar</button>
+          </div>
+        </div>
+        <aside class="side-col">
+          <div class="panel">
+            <h2>Lances</h2>
+            <div id="livre-moves" class="move-box" aria-label="Lista de lances"></div>
+          </div>
+          <details class="panel fen-panel">
+            <summary>Posição (FEN) e posição personalizada</summary>
+            <label class="field"><span>FEN da posição atual</span>
+              <input id="livre-fen" type="text" readonly></label>
+            <div class="row">
+              <button class="btn" id="livre-fen-copy" type="button">Copiar FEN</button>
+            </div>
+            <label class="field"><span>Carregar uma posição (cole uma FEN)</span>
+              <textarea id="livre-fen-in" rows="2" spellcheck="false" placeholder="ex.: 4k3/8/8/8/8/8/4P3/4K3 w - - 0 1"></textarea></label>
+            <p class="field-error" id="livre-fen-err" role="alert" hidden></p>
+            <div class="row"><button class="btn" id="livre-fen-load" type="button">Carregar posição</button></div>
+          </details>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===================== ABERTURAS (lista) ===================== -->
+    <section id="view-aberturas" class="view" hidden>
+      <div class="page-head">
+        <h1>Aberturas e Gambitos</h1>
+        <p class="muted">Escolha uma abertura para ver a ideia principal e percorrer os lances no tabuleiro.</p>
+      </div>
+      <div class="filters">
+        <label class="search"><span class="sr">Pesquisar pelo nome</span>
+          <input id="op-search" type="search" placeholder="Pesquisar pelo nome…" autocomplete="off"></label>
+        <div class="chips" role="group" aria-label="Filtrar por tipo">
+          <button class="chip on" data-tipo="" type="button">Todas</button>
+          <button class="chip" data-tipo="Abertura" type="button">Aberturas</button>
+          <button class="chip" data-tipo="Gambito" type="button">Gambitos</button>
+        </div>
+      </div>
+      <div id="op-list"></div>
+    </section>
+
+    <!-- ===================== ABERTURA (detalhe) ===================== -->
+    <section id="view-abertura" class="view" hidden>
+      <a class="back" href="#/aberturas">← Todas as aberturas</a>
+      <div id="op-detail"></div>
+    </section>
+
+    <!-- ===================== MINHAS PARTIDAS (lista) ===================== -->
+    <section id="view-partidas" class="view" hidden>
+      <div class="page-head">
+        <h1>Minhas Partidas</h1>
+        <p class="muted">Partidas salvas do Modo Livre. Ficam guardadas neste navegador.</p>
+      </div>
+      <div id="games-warn"></div>
+      <div id="games-list"></div>
+    </section>
+
+    <!-- ===================== PARTIDA SALVA (revisão) ===================== -->
+    <section id="view-partida" class="view" hidden>
+      <a class="back" href="#/partidas">← Minhas partidas</a>
+      <div id="game-detail"></div>
+    </section>
+
+  </main>
+
+  <!-- Menu inferior (celular) -->
+  <nav class="tabbar" aria-label="Seções">
+    <a href="#/" data-nav="home"><svg class="t-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5V21h-6v-6H9v6H3z" fill="currentColor"/></svg><span>Início</span></a>
+    <a href="#/livre" data-nav="livre"><svg class="t-ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-n" style="--pf:currentColor;--ps:#0d1411"/></svg><span>Livre</span></a>
+    <a href="#/aberturas" data-nav="aberturas"><svg class="t-ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-b" style="--pf:currentColor;--ps:#0d1411"/></svg><span>Aberturas</span></a>
+    <a href="#/partidas" data-nav="partidas"><svg class="t-ico" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-r" style="--pf:currentColor;--ps:#0d1411"/></svg><span>Partidas</span></a>
+  </nav>
+
+  <div id="toasts" aria-live="polite"></div>
+  <noscript><p style="padding:2rem;color:#fff">Este site precisa de JavaScript para funcionar.</p></noscript>
+
+  <!-- Ordem importa: o motor primeiro, depois quem usa o motor, por último o app -->
+  <script>
+/*
+ * engine.js — Motor de regras do xadrez (global `Chess`)
+ *
+ * Por que existe: o ambiente de desenvolvimento não tinha acesso ao npm/CDN
+ * para baixar o chess.js, então as regras foram implementadas aqui COMPLETAS
+ * (roque, en passant, promoção, xeque, mate, afogamento, empates) e
+ * validadas com testes "perft" (contagem oficial de lances, veja tests/).
+ *
+ * A interface imita o chess.js (moves, move, undo, fen, history, isCheckmate…),
+ * então, se preferir, dá para trocar por ele sem mexer no resto do site.
+ *
+ * Representação: tabuleiro de 64 casas; índice = linha*8 + coluna,
+ * linha 0 = fileira 8 (a8 = 0, h1 = 63).
+ */
+(function (root) {
+  'use strict';
+
+  const FILES = 'abcdefgh';
+  const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+  // Direções [dColuna, dLinha] usadas na geração de lances
+  const KNIGHT = [[1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2]];
+  const KING = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+  const DIAG = [[1, 1], [1, -1], [-1, 1], [-1, -1]];
+  const ORTH = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+
+  const sqName = (i) => FILES[i & 7] + (8 - (i >> 3));
+  const sqIndex = (s) => (8 - parseInt(s[1], 10)) * 8 + FILES.indexOf(s[0]);
+  const isSquare = (s) => typeof s === 'string' && /^[a-h][1-8]$/.test(s);
+  const other = (c) => (c === 'w' ? 'b' : 'w');
+
+  /* ---------------------------------------------------------------- FEN */
+
+  /** Lê uma FEN e devolve um estado cru; lança Error (PT-BR) se inválida. */
+  function parseFen(fenStr) {
+    if (typeof fenStr !== 'string' || !fenStr.trim()) throw new Error('A FEN está vazia.');
+    const parts = fenStr.trim().split(/\s+/);
+    if (parts.length < 4 || parts.length > 6) {
+      throw new Error('A FEN deve ter de 4 a 6 campos separados por espaço.');
+    }
+    const [placement, turn, castlingStr, epStr] = parts;
+    const half = parts[4] === undefined ? 0 : Number(parts[4]);
+    const full = parts[5] === undefined ? 1 : Number(parts[5]);
+    if (!Number.isInteger(half) || half < 0) throw new Error('Contador de meio-lances inválido.');
+    if (!Number.isInteger(full) || full < 1) throw new Error('Número do lance inválido.');
+
+    const rows = placement.split('/');
+    if (rows.length !== 8) throw new Error('A FEN precisa descrever exatamente 8 fileiras.');
+    const board = new Array(64).fill(null);
+    const count = { w: { p: 0, k: 0, total: 0 }, b: { p: 0, k: 0, total: 0 } };
+    for (let r = 0; r < 8; r++) {
+      let f = 0;
+      for (const ch of rows[r]) {
+        if (/[1-8]/.test(ch)) {
+          f += Number(ch);
+        } else if (/[pnbrqkPNBRQK]/.test(ch)) {
+          if (f > 7) throw new Error('Fileira com mais de 8 casas na FEN.');
+          const color = ch === ch.toUpperCase() ? 'w' : 'b';
+          const type = ch.toLowerCase();
+          if (type === 'p' && (r === 0 || r === 7)) throw new Error('Peão não pode ficar na 1ª ou 8ª fileira.');
+          board[r * 8 + f] = { color, type };
+          count[color][type === 'p' ? 'p' : type === 'k' ? 'k' : 'total']++;
+          f++;
+        } else {
+          throw new Error('Caractere inválido na FEN: "' + ch + '".');
+        }
+      }
+      if (f !== 8) throw new Error('Cada fileira da FEN deve somar 8 casas.');
+    }
+    for (const c of ['w', 'b']) {
+      if (count[c].k !== 1) throw new Error('Cada lado precisa ter exatamente um rei.');
+      if (count[c].p > 8) throw new Error('Há peões demais na posição.');
+      if (count[c].p + count[c].total + count[c].k > 16) throw new Error('Há peças demais na posição.');
+    }
+    if (turn !== 'w' && turn !== 'b') throw new Error('O campo de vez deve ser "w" ou "b".');
+
+    // Direitos de roque
+    const castling = { w: { k: false, q: false }, b: { k: false, q: false } };
+    if (!/^(-|[KQkq]+)$/.test(castlingStr)) throw new Error('Campo de roque inválido.');
+    if (castlingStr !== '-') {
+      const seen = new Set();
+      for (const ch of castlingStr) {
+        if (seen.has(ch)) throw new Error('Campo de roque com letra repetida.');
+        seen.add(ch);
+        const color = ch === ch.toUpperCase() ? 'w' : 'b';
+        const side = ch.toLowerCase();
+        const kingIdx = color === 'w' ? 60 : 4;
+        const rookIdx = color === 'w' ? (side === 'k' ? 63 : 56) : (side === 'k' ? 7 : 0);
+        const k = board[kingIdx], rk = board[rookIdx];
+        if (!k || k.type !== 'k' || k.color !== color || !rk || rk.type !== 'r' || rk.color !== color) {
+          throw new Error('Direito de roque incompatível com a posição do rei/torre.');
+        }
+        castling[color][side] = true;
+      }
+    }
+
+    // En passant
+    let ep = -1;
+    if (epStr !== '-') {
+      if (!/^[a-h][36]$/.test(epStr)) throw new Error('Casa de en passant inválida.');
+      ep = sqIndex(epStr);
+      const r = ep >> 3;
+      if ((turn === 'w' && r !== 2) || (turn === 'b' && r !== 5)) {
+        throw new Error('Casa de en passant incompatível com o lado que joga.');
+      }
+      // O peão que acabou de avançar duas casas deve estar "na frente" da casa de ep
+      const pawnIdx = turn === 'w' ? ep + 8 : ep - 8;
+      const behindIdx = turn === 'w' ? ep - 8 : ep + 8;
+      const p = board[pawnIdx];
+      if (!p || p.type !== 'p' || p.color !== other(turn) || board[ep] || board[behindIdx]) {
+        throw new Error('Casa de en passant incompatível com a posição dos peões.');
+      }
+    }
+    return { board, turn, castling, ep, half, full };
+  }
+
+  /* ------------------------------------------------------------- Classe */
+
+  class Chess {
+    constructor(fen) {
+      const s = parseFen(fen === undefined ? START_FEN : fen);
+      this._set(s);
+      // Validações que precisam do motor (reis, xeque ilegal)
+      const kings = this._findKings();
+      const dx = Math.abs((kings.w & 7) - (kings.b & 7)), dy = Math.abs((kings.w >> 3) - (kings.b >> 3));
+      if (Math.max(dx, dy) <= 1) throw new Error('Os reis não podem ficar em casas vizinhas.');
+      if (this._attacked(kings[other(this._turn)], this._turn)) {
+        throw new Error('Posição ilegal: o lado que não joga está em xeque.');
+      }
+      this._hist = [];
+      this._counts = new Map();
+      this._startFen = this.fen();
+      this._counts.set(this._key(), 1);
+    }
+
+    _set(s) {
+      this._board = s.board;
+      this._turn = s.turn;
+      this._castling = s.castling;
+      this._ep = s.ep;
+      this._half = s.half;
+      this._full = s.full;
+      this._kings = this._findKings();
+    }
+
+    _findKings() {
+      const k = { w: -1, b: -1 };
+      for (let i = 0; i < 64; i++) {
+        const p = this._board[i];
+        if (p && p.type === 'k') k[p.color] = i;
+      }
+      return k;
+    }
+
+    /** Carrega uma FEN (lança Error se inválida; o estado atual não muda). */
+    load(fen) {
+      const t = new Chess(fen);
+      Object.assign(this, t);
+      return true;
+    }
+
+    static validateFen(fen) {
+      try { new Chess(fen); return { ok: true }; } catch (e) { return { ok: false, error: e.message }; }
+    }
+
+    reset() { this.load(START_FEN); }
+
+    /* ---- Consultas simples ---- */
+    turn() { return this._turn; }
+    startFen() { return this._startFen; }
+    get(sq) { const p = this._board[sqIndex(sq)]; return p ? { color: p.color, type: p.type, square: sq } : null; }
+    board() {
+      const out = [];
+      for (let r = 0; r < 8; r++) {
+        const row = [];
+        for (let f = 0; f < 8; f++) {
+          const p = this._board[r * 8 + f];
+          row.push(p ? { square: sqName(r * 8 + f), type: p.type, color: p.color } : null);
+        }
+        out.push(row);
+      }
+      return out;
+    }
+
+    /** A casa `idx` é atacada por alguma peça da cor `by`? */
+    _attacked(idx, by) {
+      const b = this._board, f = idx & 7, r = idx >> 3;
+      // Peões: um peão branco em (f±1, r+1) ataca (f, r); preto em (f±1, r-1)
+      const pr = by === 'w' ? r + 1 : r - 1;
+      if (pr >= 0 && pr < 8) {
+        for (const df of [-1, 1]) {
+          const pf = f + df;
+          if (pf >= 0 && pf < 8) {
+            const p = b[pr * 8 + pf];
+            if (p && p.color === by && p.type === 'p') return true;
+          }
+        }
+      }
+      for (const [df, dr] of KNIGHT) {
+        const nf = f + df, nr = r + dr;
+        if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+        const p = b[nr * 8 + nf];
+        if (p && p.color === by && p.type === 'n') return true;
+      }
+      for (const [df, dr] of KING) {
+        const nf = f + df, nr = r + dr;
+        if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+        const p = b[nr * 8 + nf];
+        if (p && p.color === by && p.type === 'k') return true;
+      }
+      for (const [df, dr] of DIAG) {
+        let nf = f + df, nr = r + dr;
+        while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+          const p = b[nr * 8 + nf];
+          if (p) { if (p.color === by && (p.type === 'b' || p.type === 'q')) return true; break; }
+          nf += df; nr += dr;
+        }
+      }
+      for (const [df, dr] of ORTH) {
+        let nf = f + df, nr = r + dr;
+        while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+          const p = b[nr * 8 + nf];
+          if (p) { if (p.color === by && (p.type === 'r' || p.type === 'q')) return true; break; }
+          nf += df; nr += dr;
+        }
+      }
+      return false;
+    }
+
+    isAttacked(sq, byColor) { return this._attacked(sqIndex(sq), byColor); }
+    isCheck() { return this._attacked(this._kings[this._turn], other(this._turn)); }
+    inCheck() { return this.isCheck(); }
+
+    /* ---- Geração de lances ---- */
+
+    /** Lances pseudo-legais (ainda podem deixar o próprio rei em xeque). */
+    _pseudo(color) {
+      const b = this._board, moves = [];
+      const enemy = other(color);
+      const add = (from, to, piece, flags, promotion) => {
+        const cap = flags.includes('e') ? 'p' : (b[to] ? b[to].type : undefined);
+        const m = { color, from, to, piece, flags, captured: cap };
+        if (promotion) m.promotion = promotion;
+        moves.push(m);
+      };
+      for (let i = 0; i < 64; i++) {
+        const p = b[i];
+        if (!p || p.color !== color) continue;
+        const f = i & 7, r = i >> 3;
+        if (p.type === 'p') {
+          const dir = color === 'w' ? -1 : 1;
+          const startR = color === 'w' ? 6 : 1;
+          const promoR = color === 'w' ? 0 : 7;
+          const nr = r + dir;
+          const pushMove = (to, flags) => {
+            if ((to >> 3) === promoR) {
+              for (const pr of ['q', 'r', 'b', 'n']) add(i, to, 'p', flags + 'p', pr);
+            } else add(i, to, 'p', flags);
+          };
+          if (!b[nr * 8 + f]) {
+            pushMove(nr * 8 + f, 'n');
+            if (r === startR && !b[(r + 2 * dir) * 8 + f]) add(i, (r + 2 * dir) * 8 + f, 'p', 'b');
+          }
+          for (const df of [-1, 1]) {
+            const nf = f + df;
+            if (nf < 0 || nf > 7) continue;
+            const to = nr * 8 + nf, t = b[to];
+            if (t && t.color === enemy) pushMove(to, 'c');
+            else if (!t && to === this._ep) add(i, to, 'p', 'e');
+          }
+        } else if (p.type === 'n' || p.type === 'k') {
+          for (const [df, dr] of (p.type === 'n' ? KNIGHT : KING)) {
+            const nf = f + df, nr = r + dr;
+            if (nf < 0 || nf > 7 || nr < 0 || nr > 7) continue;
+            const to = nr * 8 + nf, t = b[to];
+            if (!t) add(i, to, p.type, 'n');
+            else if (t.color === enemy) add(i, to, p.type, 'c');
+          }
+        } else {
+          const dirs = p.type === 'b' ? DIAG : p.type === 'r' ? ORTH : DIAG.concat(ORTH);
+          for (const [df, dr] of dirs) {
+            let nf = f + df, nr = r + dr;
+            while (nf >= 0 && nf < 8 && nr >= 0 && nr < 8) {
+              const to = nr * 8 + nf, t = b[to];
+              if (!t) add(i, to, p.type, 'n');
+              else { if (t.color === enemy) add(i, to, p.type, 'c'); break; }
+              nf += df; nr += dr;
+            }
+          }
+        }
+      }
+      // Roque: reis/torres nas casas iniciais, casas livres, rei sem passar por xeque
+      const home = color === 'w' ? 60 : 4, c = this._castling[color];
+      const king = b[home];
+      if (king && king.type === 'k' && king.color === color && (c.k || c.q) && !this._attacked(home, enemy)) {
+        if (c.k && !b[home + 1] && !b[home + 2] && b[home + 3] && b[home + 3].type === 'r' &&
+            !this._attacked(home + 1, enemy) && !this._attacked(home + 2, enemy)) {
+          add(home, home + 2, 'k', 'k');
+        }
+        if (c.q && !b[home - 1] && !b[home - 2] && !b[home - 3] && b[home - 4] && b[home - 4].type === 'r' &&
+            !this._attacked(home - 1, enemy) && !this._attacked(home - 2, enemy)) {
+          add(home, home - 2, 'k', 'q');
+        }
+      }
+      return moves;
+    }
+
+    /** Aplica um lance cru e devolve o registro para desfazer. */
+    _do(m) {
+      const b = this._board, color = this._turn;
+      const rec = {
+        changes: [], castling: { w: { ...this._castling.w }, b: { ...this._castling.b } },
+        ep: this._ep, half: this._half, full: this._full, kings: { ...this._kings }
+      };
+      const set = (idx, val) => { rec.changes.push([idx, b[idx]]); b[idx] = val; };
+      const piece = b[m.from];
+      const isPawn = piece.type === 'p';
+      set(m.from, null);
+      if (m.flags.includes('e')) set(color === 'w' ? m.to + 8 : m.to - 8, null);
+      set(m.to, m.promotion ? { color, type: m.promotion } : piece);
+      if (m.flags === 'k') { set(m.from + 3, null); set(m.from + 1, { color, type: 'r' }); }
+      else if (m.flags === 'q') { set(m.from - 4, null); set(m.from - 1, { color, type: 'r' }); }
+
+      if (piece.type === 'k') {
+        this._kings[color] = m.to;
+        this._castling[color].k = this._castling[color].q = false;
+      }
+      // Torre que sai da casa inicial, ou é capturada lá, perde o direito de roque
+      const corner = (idx) => {
+        if (idx === 63) this._castling.w.k = false;
+        else if (idx === 56) this._castling.w.q = false;
+        else if (idx === 7) this._castling.b.k = false;
+        else if (idx === 0) this._castling.b.q = false;
+      };
+      corner(m.from); corner(m.to);
+
+      this._ep = m.flags === 'b' ? (m.from + m.to) / 2 : -1;
+      this._half = (isPawn || m.captured) ? 0 : this._half + 1;
+      if (color === 'b') this._full++;
+      this._turn = other(color);
+      return rec;
+    }
+
+    _undoRaw(rec) {
+      for (let i = rec.changes.length - 1; i >= 0; i--) this._board[rec.changes[i][0]] = rec.changes[i][1];
+      this._castling = rec.castling; this._ep = rec.ep; this._half = rec.half;
+      this._full = rec.full; this._kings = rec.kings;
+      this._turn = other(this._turn);
+    }
+
+    /** Todos os lances legais do lado que joga (objetos crus, sem SAN). */
+    _legal() {
+      const color = this._turn, enemy = other(color), out = [];
+      for (const m of this._pseudo(color)) {
+        const rec = this._do(m);
+        const ok = !this._attacked(this._kings[color], enemy);
+        this._undoRaw(rec);
+        if (ok) out.push(m);
+      }
+      return out;
+    }
+
+    /** Notação algébrica (SAN) de um lance legal `m` na posição atual. */
+    _san(m, legal) {
+      let san;
+      if (m.flags === 'k') san = 'O-O';
+      else if (m.flags === 'q') san = 'O-O-O';
+      else {
+        const from = sqName(m.from), to = sqName(m.to);
+        const isCap = m.flags.includes('c') || m.flags.includes('e');
+        if (m.piece === 'p') {
+          san = (isCap ? from[0] + 'x' : '') + to;
+          if (m.promotion) san += '=' + m.promotion.toUpperCase();
+        } else {
+          let dis = '';
+          const rivals = legal.filter((o) => o !== m && o.piece === m.piece && o.to === m.to);
+          if (rivals.length) {
+            const sameFile = rivals.some((o) => (o.from & 7) === (m.from & 7));
+            const sameRank = rivals.some((o) => (o.from >> 3) === (m.from >> 3));
+            if (!sameFile) dis = from[0];
+            else if (!sameRank) dis = from[1];
+            else dis = from;
+          }
+          san = m.piece.toUpperCase() + dis + (isCap ? 'x' : '') + to;
+        }
+      }
+      const rec = this._do(m);
+      if (this._attacked(this._kings[this._turn], other(this._turn))) {
+        san += this._legal().length === 0 ? '#' : '+';
+      }
+      this._undoRaw(rec);
+      return san;
+    }
+
+    _verbose(m, legal) {
+      const v = {
+        color: m.color, from: sqName(m.from), to: sqName(m.to), piece: m.piece,
+        flags: m.flags, san: this._san(m, legal)
+      };
+      if (m.captured) v.captured = m.captured;
+      if (m.promotion) v.promotion = m.promotion;
+      return v;
+    }
+
+    /**
+     * moves() → lista de SAN; moves({verbose:true}) → objetos;
+     * moves({square:'e2'}) → só as peças daquela casa.
+     */
+    moves(opts) {
+      opts = opts || {};
+      let legal = this._legal();
+      const all = legal;
+      if (opts.square) {
+        if (!isSquare(opts.square)) return [];
+        const idx = sqIndex(opts.square);
+        legal = legal.filter((m) => m.from === idx);
+      }
+      return legal.map((m) => (opts.verbose ? this._verbose(m, all) : this._san(m, all)));
+    }
+
+    /* ---- Executar / desfazer ---- */
+
+    _key() {
+      // Chave da posição para repetição: peças, vez, roques e en passant (se capturável)
+      let s = '';
+      for (let i = 0; i < 64; i++) {
+        const p = this._board[i];
+        s += p ? (p.color === 'w' ? p.type.toUpperCase() : p.type) : '.';
+      }
+      const c = this._castling;
+      s += this._turn + (c.w.k ? 'K' : '') + (c.w.q ? 'Q' : '') + (c.b.k ? 'k' : '') + (c.b.q ? 'q' : '');
+      return s + this._epEffective();
+    }
+
+    /** Casa de en passant só conta se houver captura legal possível. */
+    _epEffective() {
+      if (this._ep < 0) return '-';
+      return this._legal().some((m) => m.flags === 'e') ? sqName(this._ep) : '-';
+    }
+
+    /**
+     * Joga um lance: string SAN ("Nf3", "O-O", "e8=Q") ou {from, to, promotion}.
+     * Lança Error se o lance for ilegal. Devolve o lance (objeto verbose).
+     */
+    move(arg) {
+      const legal = this._legal();
+      let chosen = null;
+      if (typeof arg === 'string') {
+        const clean = (s) => s.replace(/[+#!?=]/g, '').replace(/0/g, 'O');
+        const want = clean(arg.trim());
+        chosen = legal.find((m) => clean(this._san(m, legal)) === want) || null;
+      } else if (arg && isSquare(arg.from) && isSquare(arg.to)) {
+        const from = sqIndex(arg.from), to = sqIndex(arg.to);
+        const cands = legal.filter((m) => m.from === from && m.to === to);
+        if (cands.length === 1 && !cands[0].promotion) chosen = cands[0];
+        else if (cands.length) {
+          const promo = (arg.promotion || '').toLowerCase();
+          chosen = cands.find((m) => m.promotion === promo) || null;
+          if (!chosen && !promo) throw new Error('Escolha a peça da promoção.');
+        }
+      }
+      if (!chosen) throw new Error('Lance inválido: ' + (typeof arg === 'string' ? arg : JSON.stringify(arg)));
+
+      const verbose = this._verbose(chosen, legal);
+      const rec = this._do(chosen);
+      const key = this._key();
+      this._counts.set(key, (this._counts.get(key) || 0) + 1);
+      this._hist.push({ rec, key, move: verbose });
+      return verbose;
+    }
+
+    /** Desfaz o último lance; devolve-o (ou null se não há o que desfazer). */
+    undo() {
+      const h = this._hist.pop();
+      if (!h) return null;
+      const n = this._counts.get(h.key) - 1;
+      if (n <= 0) this._counts.delete(h.key); else this._counts.set(h.key, n);
+      this._undoRaw(h.rec);
+      return h.move;
+    }
+
+    history(opts) {
+      return this._hist.map((h) => (opts && opts.verbose ? { ...h.move } : h.move.san));
+    }
+
+    /* ---- Estado do jogo ---- */
+
+    isCheckmate() { return this.isCheck() && this._legal().length === 0; }
+    isStalemate() { return !this.isCheck() && this._legal().length === 0; }
+
+    /** Material insuficiente para dar mate (posição morta). */
+    isInsufficientMaterial() {
+      const minors = [];
+      for (let i = 0; i < 64; i++) {
+        const p = this._board[i];
+        if (!p || p.type === 'k') continue;
+        if (p.type === 'n' || p.type === 'b') minors.push({ type: p.type, shade: ((i & 7) + (i >> 3)) & 1 });
+        else return false; // peão, torre ou dama
+      }
+      if (minors.length <= 1) return true;                      // R x R, R+minor x R
+      return minors.every((m) => m.type === 'b' && m.shade === minors[0].shade); // bispos da mesma cor
+    }
+
+    isThreefoldRepetition() { return (this._counts.get(this._key()) || 0) >= 3; }
+    isDrawByFiftyMoves() { return this._half >= 100; }
+    isDraw() {
+      return this.isStalemate() || this.isInsufficientMaterial() ||
+             this.isDrawByFiftyMoves() || this.isThreefoldRepetition();
+    }
+    isGameOver() { return this.isCheckmate() || this.isDraw(); }
+
+    fen() {
+      let s = '';
+      for (let r = 0; r < 8; r++) {
+        let empty = 0;
+        for (let f = 0; f < 8; f++) {
+          const p = this._board[r * 8 + f];
+          if (!p) { empty++; continue; }
+          if (empty) { s += empty; empty = 0; }
+          s += p.color === 'w' ? p.type.toUpperCase() : p.type;
+        }
+        if (empty) s += empty;
+        if (r < 7) s += '/';
+      }
+      const c = this._castling;
+      const cs = (c.w.k ? 'K' : '') + (c.w.q ? 'Q' : '') + (c.b.k ? 'k' : '') + (c.b.q ? 'q' : '');
+      return [s, this._turn, cs || '-', this._epEffective(), this._half, this._full].join(' ');
+    }
+
+    /** Conta posições alcançáveis em `depth` lances (usado nos testes). */
+    perft(depth) {
+      if (depth === 0) return 1;
+      const legal = this._legal();
+      if (depth === 1) return legal.length;
+      let n = 0;
+      for (const m of legal) {
+        const rec = this._do(m);
+        n += this.perft(depth - 1);
+        this._undoRaw(rec);
+      }
+      return n;
+    }
+  }
+
+  Chess.START_FEN = START_FEN;
+  Chess.sqName = sqName;
+  Chess.sqIndex = sqIndex;
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { Chess };
+  else root.Chess = Chess;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * pieces.js — Peças desenhadas em SVG (sem imagens externas, sem fontes).
+ *
+ * Por que SVG e não os símbolos Unicode (♔♕♖…)? Em muitos Androids esses símbolos
+ * aparecem como emoji ou com fontes diferentes. Com SVG a peça fica idêntica em
+ * qualquer aparelho e nítida em qualquer tamanho.
+ *
+ * As cores vêm de variáveis CSS (--pf = preenchimento, --ps = contorno),
+ * definidas em style.css para peças brancas (.w) e pretas (.b).
+ */
+(function (root) {
+  'use strict';
+  const BASE = '<path class="pf" d="M25 88h50a3 3 0 0 0 3-3v-3a3 3 0 0 0-3-3H25a3 3 0 0 0-3 3v3a3 3 0 0 0 3 3z"/>';
+
+  const SYMBOLS = {
+    p: '<circle class="pf" cx="50" cy="31" r="11"/>' +
+       '<path class="pf" d="M38 47q12-6 24 0l-3 5q-9-4-18 0z"/>' +
+       '<path class="pf" d="M41 79q0-19 5-27h8q5 8 5 27z"/>' + BASE,
+    r: '<path class="pf" d="M28 22h12v8h5v-8h10v8h5v-8h12v20l-8 8v26H36V50l-8-8z"/>' +
+       '<path class="pd" d="M30 42h40M37 50h26"/>' + BASE,
+    n: '<path class="pf" d="M28 79c0-12 6-20 14-26H28c-4 0-6-4-3-7l13-16 2-12 9 8c3-1 6-1 9 0 14 6 20 24 14 53z"/>' +
+       '<circle cx="46" cy="36" r="2.6" style="fill:var(--ps)"/>' +
+       '<path class="pd" d="M25 47l8-3M52 26c6 4 12 12 14 22"/>' + BASE,
+    b: '<circle class="pf" cx="50" cy="16" r="5.5"/>' +
+       '<path class="pf" d="M50 23c15 8 17 20 9 31H41c-8-11-6-23 9-31z"/>' +
+       '<path class="pd" d="M50 31v9M46 35.5h8"/>' +
+       '<rect class="pf" x="38" y="54" width="24" height="6" rx="3"/>' +
+       '<path class="pf" d="M42 60h16c0 8 4 14 8 19H34c4-5 8-11 8-19z"/>' + BASE,
+    q: '<path class="pf" d="M24 36l12 20 1-26 8 22 5-28 5 28 8-22 1 26 12-20-8 32H32z"/>' +
+       '<circle class="pf" cx="24" cy="33" r="4.5"/><circle class="pf" cx="37" cy="27" r="4.5"/>' +
+       '<circle class="pf" cx="50" cy="22" r="4.5"/><circle class="pf" cx="63" cy="27" r="4.5"/>' +
+       '<circle class="pf" cx="76" cy="33" r="4.5"/>' +
+       '<path class="pf" d="M32 66h36l-2 13H34z"/>' + BASE,
+    k: '<path class="pf" d="M46 8h8v6h6v8h-6v6h-8v-6h-6v-8h6z"/>' +
+       '<path class="pf" d="M30 42c0-11 9-15 20-15s20 4 20 15c0 8-8 11-8 17H38c0-6-8-9-8-17z"/>' +
+       '<path class="pd" d="M50 28v12M38 59h24"/>' +
+       '<path class="pf" d="M36 59h28l4 20H32z"/>' + BASE
+  };
+
+  /** Texto do <svg> com todos os símbolos (injetado uma única vez na página). */
+  function spriteMarkup() {
+    let s = '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true"><defs>';
+    for (const k of Object.keys(SYMBOLS)) s += `<symbol id="pc-${k}" viewBox="0 0 100 100">${SYMBOLS[k]}</symbol>`;
+    return s + '</defs></svg>';
+  }
+
+  /** HTML de uma peça: color 'w'|'b', type 'p'|'n'|'b'|'r'|'q'|'k'. */
+  function pieceHtml(color, type) {
+    return `<svg class="piece ${color}" viewBox="0 0 100 100" aria-hidden="true"><use href="#pc-${type}"/></svg>`;
+  }
+
+  const NAMES = { p: 'peão', n: 'cavalo', b: 'bispo', r: 'torre', q: 'dama', k: 'rei' };
+
+  const api = { spriteMarkup, pieceHtml, NAMES };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else { root.XD = root.XD || {}; root.XD.Pieces = api; }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * session.js — GameSession: uma partida navegável (desfazer / refazer / ir ao lance N).
+ *
+ * Ideia: o motor (Chess) só conhece a posição ATUAL. A sessão guarda a lista
+ * completa de lances (`moves`) e um cursor (`cursor`) que diz em qual lance estamos.
+ *   - desfazer  = cursor - 1 (o lance continua na lista, dá para refazer)
+ *   - jogar um lance novo no meio da lista = apaga os lances "à frente" (como todo site de xadrez)
+ * Assim a MESMA classe serve para o Modo Livre, as Aberturas e a revisão de partidas salvas.
+ */
+(function (root) {
+  'use strict';
+  const Chess = root.Chess || (typeof require !== 'undefined' ? require('./engine.js').Chess : null);
+
+  class GameSession {
+    /**
+     * @param {{startFen?:string, moves?:Array, cursor?:number}} data
+     * Lança Error se a FEN ou algum lance for inválido.
+     */
+    constructor(data) {
+      data = data || {};
+      this.startFen = data.startFen || Chess.START_FEN;
+      this.chess = new Chess(this.startFen);        // lança se a FEN for inválida
+      this.moves = [];                               // [{from,to,promotion?,san}]
+      this.cursor = 0;
+      for (const m of (data.moves || [])) {          // reconstrói a partida lance a lance
+        const v = this.chess.move(typeof m === 'string' ? m : { from: m.from, to: m.to, promotion: m.promotion });
+        this.moves.push(this._store(v));
+      }
+      this.cursor = this.moves.length;
+      if (typeof data.cursor === 'number') this.goTo(data.cursor);
+    }
+
+    _store(v) {
+      const m = { from: v.from, to: v.to, san: v.san };
+      if (v.promotion) m.promotion = v.promotion;
+      return m;
+    }
+
+    get length() { return this.moves.length; }
+    get canUndo() { return this.cursor > 0; }
+    get canRedo() { return this.cursor < this.moves.length; }
+    get turn() { return this.chess.turn(); }
+    fen() { return this.chess.fen(); }
+    lastMove() { return this.cursor > 0 ? this.moves[this.cursor - 1] : null; }
+
+    /** Casa do rei em xeque (ou null). */
+    checkSquare() {
+      if (!this.chess.isCheck()) return null;
+      const t = this.chess.turn();
+      for (const row of this.chess.board()) for (const p of row) if (p && p.type === 'k' && p.color === t) return p.square;
+      return null;
+    }
+
+    /** Destinos legais a partir de uma casa (lista de casas). */
+    targetsFrom(sq) {
+      if (this.chess.isCheckmate() || this.chess.isStalemate() || this.chess.isInsufficientMaterial()) return [];
+      return [...new Set(this.chess.moves({ square: sq, verbose: true }).map((m) => m.to))];
+    }
+
+    /** O lance from→to exige escolher a peça da promoção? */
+    needsPromotion(from, to) {
+      return this.chess.moves({ square: from, verbose: true }).some((m) => m.to === to && m.promotion);
+    }
+
+    /** Joga um lance a partir do cursor (apaga o "futuro"). Lança Error se ilegal. */
+    play(move) {
+      if (this.chess.isCheckmate() || this.chess.isStalemate() || this.chess.isInsufficientMaterial()) {
+        throw new Error('A partida terminou. Desfaça um lance ou comece outra.');
+      }
+      const v = this.chess.move(move);
+      this.moves.length = this.cursor;      // descarta lances desfeitos
+      this.moves.push(this._store(v));
+      this.cursor = this.moves.length;
+      return v;
+    }
+
+    undo() { if (!this.canUndo) return false; this.chess.undo(); this.cursor--; return true; }
+    redo() {
+      if (!this.canRedo) return false;
+      const m = this.moves[this.cursor];
+      this.chess.move({ from: m.from, to: m.to, promotion: m.promotion });
+      this.cursor++;
+      return true;
+    }
+    goTo(i) {
+      i = Math.max(0, Math.min(this.moves.length, i));
+      while (this.cursor > i) this.undo();
+      while (this.cursor < i) this.redo();
+    }
+
+    /** Volta à posição inicial da partida e APAGA os lances (Reiniciar). */
+    restart() {
+      this.goTo(0);
+      this.moves = [];
+      this.cursor = 0;
+    }
+
+    /** Número do lance e cor de quem abre a partida (útil com FEN personalizada). */
+    firstMoveInfo() {
+      const f = this.startFen.trim().split(/\s+/);
+      return { color: f[1] === 'b' ? 'b' : 'w', number: parseInt(f[5], 10) || 1 };
+    }
+
+    /**
+     * Estado em linguagem natural.
+     * kind: 'mate' | 'afogamento' | 'material' | 'tripla' | 'cinquenta' | 'xeque' | 'normal'
+     * over: true se NÃO dá mais para jogar (mate, afogamento, material insuficiente).
+     * Repetição tripla / regra dos 50 lances são empates que se PODE pedir; o jogo segue.
+     */
+    status() {
+      const c = this.chess, turnName = c.turn() === 'w' ? 'Brancas' : 'Pretas';
+      if (c.isCheckmate()) {
+        const winner = c.turn() === 'w' ? 'Pretas' : 'Brancas';
+        return { kind: 'mate', over: true, result: c.turn() === 'w' ? '0-1' : '1-0', text: `Xeque-mate! ${winner} vencem.` };
+      }
+      if (c.isStalemate()) return { kind: 'afogamento', over: true, result: '1/2-1/2', text: 'Empate por afogamento: o lado que joga não está em xeque e não tem lance legal.' };
+      if (c.isInsufficientMaterial()) return { kind: 'material', over: true, result: '1/2-1/2', text: 'Empate por material insuficiente: nenhum lado consegue dar mate.' };
+      if (c.isThreefoldRepetition()) return { kind: 'tripla', over: false, result: '*', text: 'A posição se repetiu 3 vezes: empate por repetição pode ser pedido.', check: c.isCheck() };
+      if (c.isDrawByFiftyMoves()) return { kind: 'cinquenta', over: false, result: '*', text: '50 lances sem captura nem lance de peão: empate pode ser pedido.', check: c.isCheck() };
+      if (c.isCheck()) return { kind: 'xeque', over: false, result: '*', text: `Xeque! Vez das ${turnName}.`, check: true };
+      return { kind: 'normal', over: false, result: '*', text: `Vez das ${turnName}.` };
+    }
+
+    /** Dados simples (JSON) para salvar: tudo que é preciso para reconstruir. */
+    serialize() {
+      return { startFen: this.startFen, moves: this.moves.slice(0, this.cursor).map((m) => ({ ...m })), finalFen: this.fen(), result: this.status().result };
+    }
+
+    /** Cria uma sessão a partir de lances SAN (ex.: aberturas). */
+    static fromSan(sanList, startFen) {
+      return new GameSession({ startFen, moves: sanList });
+    }
+  }
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { GameSession };
+  else { root.XD = root.XD || {}; root.XD.GameSession = GameSession; }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * storage.js — Salvamento no localStorage (sem login, sem banco de dados).
+ *
+ * Duas chaves:
+ *   xadrez.partidas.v1  → lista de partidas salvas (JSON)
+ *   xadrez.rascunho.v1  → a partida em andamento no Modo Livre (para não perder ao fechar o navegador)
+ *
+ * Por que validar ao ler? O localStorage pode ser editado/corrompido. Cada partida é
+ * "reproduzida" no motor; se algum lance for ilegal, a partida é ignorada (e o usuário é avisado)
+ * em vez de quebrar o site inteiro.
+ *
+ * Formato de uma partida:
+ *   { id, title, createdAt, updatedAt, startFen, finalFen, result,
+ *     moves: [{from, to, promotion?, san}] }
+ */
+(function (root) {
+  'use strict';
+  const GAMES_KEY = 'xadrez.partidas.v1';
+  const DRAFT_KEY = 'xadrez.rascunho.v1';
+  const Chess = root.Chess || (typeof require !== 'undefined' ? require('./engine.js').Chess : null);
+  const GameSession = (root.XD && root.XD.GameSession) || (typeof require !== 'undefined' ? require('./session.js').GameSession : null);
+
+  /**
+   * Alguns navegadores/contextos (modo privado, arquivo aberto por gerenciador de arquivos do Android)
+   * bloqueiam o localStorage. Nesse caso usamos uma memória temporária: o site funciona durante a
+   * visita, mas nada é guardado depois de fechar (e o usuário é avisado).
+   */
+  const memoria = {};
+  const memShim = {
+    getItem: (k) => (k in memoria ? memoria[k] : null),
+    setItem: (k, v) => { memoria[k] = String(v); },
+    removeItem: (k) => { delete memoria[k]; }
+  };
+  function real() {
+    try { const s = root.localStorage; const k = '__xadrez_teste__'; s.setItem(k, '1'); s.removeItem(k); return s; }
+    catch (e) { return null; }
+  }
+  function ls() { return real() || memShim; }
+
+  const Store = {
+    warnings: [],                                   // avisos da última leitura (partidas corrompidas)
+    available() { return !!real(); },   // false = dados NÃO persistem
+
+    newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); },
+
+    /** Confere e normaliza uma partida; devolve null se inválida. */
+    validate(g) {
+      try {
+        if (!g || typeof g !== 'object' || typeof g.id !== 'string' || !Array.isArray(g.moves)) return null;
+        const s = new GameSession({ startFen: g.startFen, moves: g.moves });
+        const st = s.status();
+        return {
+          id: g.id,
+          title: String(g.title || 'Partida sem título').slice(0, 80),
+          createdAt: g.createdAt || new Date().toISOString(),
+          updatedAt: g.updatedAt || g.createdAt || new Date().toISOString(),
+          startFen: s.startFen,
+          finalFen: s.fen(),
+          result: st.result,
+          moves: s.moves
+        };
+      } catch (e) { return null; }
+    },
+
+    /** Lê todas as partidas (mais recentes primeiro). */
+    list() {
+      this.warnings = [];
+      const s = ls();
+      if (!real()) this.warnings.push('Este navegador bloqueou o armazenamento: as partidas só duram até fechar a página. Abra o site por um endereço (http/https) para guardá-las.');
+      let raw = s.getItem(GAMES_KEY);
+      if (!raw) return [];
+      let arr;
+      try { arr = JSON.parse(raw); if (!Array.isArray(arr)) throw new Error('formato'); }
+      catch (e) {
+        try { s.setItem(GAMES_KEY + '.corrompido', raw); } catch (e2) { /* sem espaço: ignora */ }
+        this.warnings.push('Os dados salvos estavam corrompidos e foram isolados. Uma cópia foi mantida no navegador.');
+        return [];
+      }
+      const ok = [];
+      let bad = 0;
+      for (const g of arr) { const v = this.validate(g); if (v) ok.push(v); else bad++; }
+      if (bad) this.warnings.push(`${bad} partida(s) inválida(s) foram ignoradas.`);
+      return ok.sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
+    },
+
+    get(id) { return this.list().find((g) => g.id === id) || null; },
+
+    _write(arr) {
+      const s = ls();
+      try { s.setItem(GAMES_KEY, JSON.stringify(arr)); }
+      catch (e) { throw new Error('Não foi possível salvar: o armazenamento do navegador está cheio.'); }
+    },
+
+    /**
+     * Salva (cria ou atualiza) uma partida.
+     * @param {{id?:string,title:string,session:GameSession}} p
+     */
+    save(p) {
+      const all = this.list();
+      const data = p.session.serialize();
+      const now = new Date().toISOString();
+      const idx = p.id ? all.findIndex((g) => g.id === p.id) : -1;
+      const rec = {
+        id: idx >= 0 ? p.id : this.newId(),
+        title: (p.title || '').trim().slice(0, 80) || 'Partida sem título',
+        createdAt: idx >= 0 ? all[idx].createdAt : now,
+        updatedAt: now,
+        startFen: data.startFen, finalFen: data.finalFen, result: data.result, moves: data.moves
+      };
+      if (idx >= 0) all[idx] = rec; else all.push(rec);
+      this._write(all);
+      return rec;
+    },
+
+    rename(id, title) {
+      const all = this.list();
+      const g = all.find((x) => x.id === id);
+      if (!g) throw new Error('Partida não encontrada.');
+      const t = (title || '').trim();
+      if (!t) throw new Error('O título não pode ficar vazio.');
+      g.title = t.slice(0, 80);
+      g.updatedAt = new Date().toISOString();
+      this._write(all);
+      return g;
+    },
+
+    remove(id) {
+      const all = this.list();
+      const rest = all.filter((g) => g.id !== id);
+      if (rest.length === all.length) throw new Error('Partida não encontrada.');
+      this._write(rest);
+    },
+
+    /* ---- Rascunho do Modo Livre ---- */
+    saveDraft(session, linkedId) {
+      const s = ls();
+      try {
+        const d = session.serialize();
+        s.setItem(DRAFT_KEY, JSON.stringify({ startFen: d.startFen, moves: session.moves, cursor: session.cursor, linkedId: linkedId || null }));
+      } catch (e) { /* rascunho é opcional: ignora falhas */ }
+    },
+    loadDraft() {
+      const s = ls();
+      try {
+        const d = JSON.parse(s.getItem(DRAFT_KEY) || 'null');
+        if (!d) return null;
+        const session = new GameSession({ startFen: d.startFen, moves: d.moves, cursor: d.cursor });
+        return { session, linkedId: d.linkedId || null };
+      } catch (e) { return null; }
+    },
+    clearDraft() { const s = ls(); try { s.removeItem(DRAFT_KEY); } catch (e) { /* ignora */ } }
+  };
+
+  if (typeof module !== 'undefined' && module.exports) module.exports = { Store };
+  else { root.XD = root.XD || {}; root.XD.Store = Store; }
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * openings-data.js — Biblioteca de aberturas e gambitos (apenas dados).
+ *
+ * Cada abertura tem:
+ *   id, nome, categoria, tipo ('Abertura' | 'Gambito'), resumo, ideia (texto simples),
+ *   planos { brancas, pretas }, variantes [{ nome, descricao, lances: [SAN...] }]
+ *
+ * IMPORTANTE: toda sequência de `lances` é verificada automaticamente pelo motor
+ * (tests/openings.test.js) — se algum lance for ilegal, o teste falha.
+ * Para adicionar uma abertura nova, basta incluir um objeto aqui e rodar o teste.
+ */
+(function (root) {
+  'use strict';
+
+  const CATEGORIAS = {
+    abertos: 'Jogos Abertos (1.e4 e5)',
+    semiabertos: 'Defesas Semiabertas (1.e4)',
+    fechados: 'Jogos Fechados (1.d4)'
+  };
+
+  const OPENINGS = [
+    {
+      id: 'italiana', nome: 'Abertura Italiana', categoria: 'abertos', tipo: 'Abertura',
+      resumo: 'Desenvolvimento rápido mirando o ponto fraco f7.',
+      ideia: 'As brancas colocam o bispo em c4, apontando para f7 (a casa mais frágil das pretas no começo), e desenvolvem as peças com calma. É uma abertura clássica, ótima para aprender os princípios básicos: controlar o centro, desenvolver as peças e rocar cedo.',
+      planos: {
+        brancas: 'Jogar c3 e d4 para ocupar o centro, rocar e levar a torre para e1.',
+        pretas: 'Desenvolver as peças com segurança (Bc5, Nf6), rocar e responder no centro com ...d5 quando possível.'
+      },
+      variantes: [
+        { nome: 'Giuoco Pianissimo (jogo calmo)', descricao: 'Em vez de d4 imediato, as brancas jogam d3 e preparam o ataque com paciência.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'c3', 'Nf6', 'd3', 'd6', 'O-O', 'O-O', 'Re1', 'a6', 'Bb3', 'Ba7', 'h3', 'h6'] },
+        { nome: 'Gambito Evans', descricao: 'As brancas sacrificam o peão b em troca de tempo e de um grande centro com c3 e d4.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'Bc4', 'Bc5', 'b4', 'Bxb4', 'c3', 'Ba5', 'd4', 'exd4', 'O-O', 'd6', 'cxd4', 'Bb6'] }
+      ]
+    },
+    {
+      id: 'ruy-lopez', nome: 'Ruy López', categoria: 'abertos', tipo: 'Abertura',
+      resumo: 'Pressão sobre o cavalo que defende o peão e5.',
+      ideia: 'O bispo vai a b5 e ataca o cavalo de c6, que protege o peão de e5. Não ameaça ganhar o peão de imediato, mas cria uma pressão de longo prazo. É uma das aberturas mais estudadas da história, usada em todos os níveis.',
+      planos: {
+        brancas: 'Construir o centro com c3 e d4, manter o bispo ativo (Bb3) e reagrupar as peças.',
+        pretas: 'Expulsar o bispo com ...a6 e ...b5, desenvolver Be7, rocar e contra-atacar com ...d5 ou ...Na5.'
+      },
+      variantes: [
+        { nome: 'Variante Fechada', descricao: 'A linha clássica: ambos os lados rocam e a luta é posicional.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'a6', 'Ba4', 'Nf6', 'O-O', 'Be7', 'Re1', 'b5', 'Bb3', 'd6', 'c3', 'O-O', 'h3'] },
+        { nome: 'Defesa de Berlim', descricao: 'As pretas capturam o peão de e4 e trocam as damas cedo, chegando a um final sólido.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'Bb5', 'Nf6', 'O-O', 'Nxe4', 'd4', 'Nd6', 'Bxc6', 'dxc6', 'dxe5', 'Nf5', 'Qxd8+', 'Kxd8'] }
+      ]
+    },
+    {
+      id: 'escocesa', nome: 'Gambito da Escocesa', categoria: 'abertos', tipo: 'Gambito',
+      resumo: 'Abre o centro cedo com d4, oferecendo um peão pelo desenvolvimento.',
+      ideia: 'As brancas jogam d4 logo no terceiro lance para abrir o centro. No Gambito da Escocesa, depois de ...exd4 elas não recapturam de imediato: desenvolvem o bispo (Bc4) e ganham tempo para atacar, em troca do peão. Já na Partida Escocesa clássica, recapturam com o cavalo.',
+      planos: {
+        brancas: 'Usar o desenvolvimento e o espaço no centro para atacar antes que as pretas se organizem.',
+        pretas: 'Aceitar o peão com segurança, desenvolver as peças e devolver material se preciso para neutralizar o ataque.'
+      },
+      variantes: [
+        { nome: 'Gambito da Escocesa (4.Bc4)', descricao: 'As brancas oferecem o peão de d4 e usam o bispo e o centro para pressionar.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Bc4', 'Bc5', 'c3', 'Nf6', 'e5', 'd5', 'Bb5', 'Ne4', 'cxd4', 'Bb6'] },
+        { nome: 'Partida Escocesa (4.Nxd4)', descricao: 'A versão clássica: as brancas recapturam o peão e ficam com o centro aberto.',
+          lances: ['e4', 'e5', 'Nf3', 'Nc6', 'd4', 'exd4', 'Nxd4', 'Nf6', 'Nxc6', 'bxc6', 'e5', 'Qe7', 'Qe2', 'Nd5', 'c4', 'Ba6'] }
+      ]
+    },
+    {
+      id: 'gambito-rei', nome: 'Gambito do Rei', categoria: 'abertos', tipo: 'Gambito',
+      resumo: 'Sacrifica o peão f para atacar o centro e a ala do rei.',
+      ideia: 'Com 2.f4, as brancas oferecem o peão em troca de um centro forte e de colunas abertas contra o rei adversário. Foi a abertura favorita do século XIX: é agressiva e cheia de táticas, mas exige conhecimento, porque o rei branco também fica exposto.',
+      planos: {
+        brancas: 'Ocupar o centro com d4, desenvolver rápido e usar a coluna f aberta para atacar.',
+        pretas: 'Aceitar o gambito e devolver o peão no momento certo, ou contra-atacar no centro com ...d5.'
+      },
+      variantes: [
+        { nome: 'Gambito Aceito (Kieseritzky)', descricao: 'As pretas aceitam o peão e defendem-no com ...g5 e ...g4; as brancas respondem com o cavalo em e5.',
+          lances: ['e4', 'e5', 'f4', 'exf4', 'Nf3', 'g5', 'h4', 'g4', 'Ne5', 'Nf6', 'Bc4', 'd5', 'exd5', 'Bd6'] },
+        { nome: 'Contra-Gambito Falkbeer', descricao: 'As pretas recusam e contra-atacam imediatamente no centro com ...d5.',
+          lances: ['e4', 'e5', 'f4', 'd5', 'exd5', 'e4', 'd3', 'Nf6', 'dxe4', 'Nxe4', 'Nf3', 'Bc5'] }
+      ]
+    },
+    {
+      id: 'siciliana', nome: 'Defesa Siciliana', categoria: 'semiabertos', tipo: 'Abertura',
+      resumo: 'A resposta mais combativa a 1.e4: desequilibra o jogo desde o início.',
+      ideia: 'Com 1...c5, as pretas não copiam as brancas: trocam um peão lateral (c) por um peão central (d), criando uma posição assimétrica. Cada lado ataca em uma ala: as brancas geralmente no rei, as pretas na dama. É a defesa mais popular e a que mais vence com as pretas.',
+      planos: {
+        brancas: 'Avançar na ala do rei, aproveitar o espaço no centro e atacar o rei adversário.',
+        pretas: 'Pressionar na ala da dama (colunas c e b), usar a coluna c aberta e contra-atacar com peças ativas.'
+      },
+      variantes: [
+        { nome: 'Variante Najdorf', descricao: 'Com ...a6 as pretas preparam ...e5 ou ...b5. É a linha mais famosa e rica em teoria.',
+          lances: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'a6', 'Bg5', 'e6', 'f4', 'Be7', 'Qf3', 'Qc7', 'O-O-O', 'Nbd7'] },
+        { nome: 'Variante do Dragão', descricao: 'As pretas fianquetam o bispo em g7, que mira a longa diagonal. Jogo afiado, com roques opostos.',
+          lances: ['e4', 'c5', 'Nf3', 'd6', 'd4', 'cxd4', 'Nxd4', 'Nf6', 'Nc3', 'g6', 'Be3', 'Bg7', 'f3', 'O-O', 'Qd2', 'Nc6', 'Bc4', 'Bd7', 'O-O-O', 'Rc8'] }
+      ]
+    },
+    {
+      id: 'francesa', nome: 'Defesa Francesa', categoria: 'semiabertos', tipo: 'Abertura',
+      resumo: 'Estrutura sólida com ...e6 e ...d5, atacando o centro das brancas.',
+      ideia: 'As pretas preparam ...d5 com ...e6 para contestar o centro. A posição é sólida, mas o bispo de c8 fica preso atrás dos próprios peões. Em troca, as pretas ganham um alvo claro: a base da cadeia de peões branca.',
+      planos: {
+        brancas: 'Avançar com e5 para ganhar espaço e atacar a ala do rei.',
+        pretas: 'Atacar a base da cadeia de peões com ...c5 e ...f6, e libertar o bispo de c8.'
+      },
+      variantes: [
+        { nome: 'Variante Clássica', descricao: 'As brancas desenvolvem Nc3 e Bg5; após e5, as pretas trocam bispos e atacam com ...c5.',
+          lances: ['e4', 'e6', 'd4', 'd5', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e5', 'Nfd7', 'Bxe7', 'Qxe7', 'f4', 'O-O', 'Nf3', 'c5'] },
+        { nome: 'Variante do Avanço', descricao: 'As brancas avançam e5 de imediato e travam o centro. As pretas atacam d4 com ...c5.',
+          lances: ['e4', 'e6', 'd4', 'd5', 'e5', 'c5', 'c3', 'Nc6', 'Nf3', 'Qb6', 'a3', 'Nh6'] }
+      ]
+    },
+    {
+      id: 'caro-kann', nome: 'Defesa Caro-Kann', categoria: 'semiabertos', tipo: 'Abertura',
+      resumo: 'Sólida e segura: ...c6 prepara ...d5 sem prender o bispo de c8.',
+      ideia: 'Parecida com a Francesa, mas as pretas apoiam ...d5 com o peão de c6 e, assim, o bispo da dama continua livre para sair. A estrutura é muito sólida, boa para quem prefere jogo estável e finais favoráveis.',
+      planos: {
+        brancas: 'Ganhar espaço no centro (avanço e5) ou pressionar na ala do rei.',
+        pretas: 'Tirar o bispo para fora da cadeia de peões (Bf5 ou Bg4), rocar com segurança e atacar com ...c5 ou ...e5.'
+      },
+      variantes: [
+        { nome: 'Variante Clássica', descricao: 'As pretas capturam em e4 e desenvolvem o bispo antes de fechar com ...e6.',
+          lances: ['e4', 'c6', 'd4', 'd5', 'Nc3', 'dxe4', 'Nxe4', 'Bf5', 'Ng3', 'Bg6', 'h4', 'h6', 'Nf3', 'Nd7', 'h5', 'Bh7', 'Bd3', 'Bxd3', 'Qxd3', 'e6'] },
+        { nome: 'Variante do Avanço', descricao: 'As brancas avançam e5, ganhando espaço. As pretas tiram o bispo e atacam o centro com ...c5.',
+          lances: ['e4', 'c6', 'd4', 'd5', 'e5', 'Bf5', 'Nf3', 'e6', 'Be2', 'c5', 'Be3', 'cxd4', 'Nxd4', 'Nc6'] }
+      ]
+    },
+    {
+      id: 'gambito-dama', nome: 'Gambito da Dama', categoria: 'fechados', tipo: 'Gambito',
+      resumo: 'Oferece o peão c para dominar o centro com e4.',
+      ideia: 'Com 2.c4, as brancas oferecem o peão de c para desviar o peão de d5 e ocupar o centro. Na verdade, é um gambito "falso": se as pretas aceitam, as brancas recuperam o peão com facilidade. É uma abertura de estratégia clara e muito respeitada.',
+      planos: {
+        brancas: 'Recuperar o peão (Bxc4), formar um grande centro com e3/e4 e desenvolver as peças com harmonia.',
+        pretas: 'Aceitando: devolver o peão no momento certo e jogar ...c5. Recusando: manter o centro com ...e6 e desenvolver com solidez.'
+      },
+      variantes: [
+        { nome: 'Gambito da Dama Aceito', descricao: 'As pretas capturam o peão de c4; as brancas recuperam com Bxc4.',
+          lances: ['d4', 'd5', 'c4', 'dxc4', 'Nf3', 'Nf6', 'e3', 'e6', 'Bxc4', 'c5', 'O-O', 'a6'] },
+        { nome: 'Gambito da Dama Recusado', descricao: 'As pretas defendem d5 com ...e6, mantendo o centro, e jogam uma estrutura muito sólida.',
+          lances: ['d4', 'd5', 'c4', 'e6', 'Nc3', 'Nf6', 'Bg5', 'Be7', 'e3', 'O-O', 'Nf3', 'h6', 'Bh4', 'b6'] }
+      ]
+    }
+  ];
+
+  const data = { OPENINGS, CATEGORIAS };
+  if (typeof module !== 'undefined' && module.exports) module.exports = data;
+  else root.OpeningsData = data;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * board.js — Componente do tabuleiro (só desenha e captura toques/cliques).
+ *
+ * Ele NÃO conhece as regras: pergunta ao "dono" (Modo Livre, Aberturas…) por meio de callbacks.
+ *   getTargets(casa)   → lista de casas para onde a peça pode ir (vazia = não selecionável)
+ *   onMove(de, para)   → chamado quando o usuário completa um lance
+ * Isso separa a interface (aqui) das regras (engine.js).
+ *
+ * Interação: toque na peça + toque no destino, OU arrastar a peça (Pointer Events:
+ * funciona igual com dedo, caneta e mouse). `touch-action: none` no CSS impede que a
+ * página role enquanto se arrasta uma peça no celular.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+  const FILES = 'abcdefgh';
+
+  class Board {
+    /**
+     * @param {HTMLElement} el contêiner vazio
+     * @param {{interactive?:boolean,getTargets?:Function,onMove?:Function}} opts
+     */
+    constructor(el, opts) {
+      this.el = el;
+      this.opts = Object.assign({ interactive: true, getTargets: () => [], onMove: () => {} }, opts);
+      this.orientation = 'w';
+      this.state = { board: null, lastMove: null, check: null };
+      this.selected = null;
+      this.targets = [];
+      this.down = null;
+      this.ghost = null;
+
+      el.classList.add('board');
+      el.setAttribute('role', 'grid');
+      el.setAttribute('aria-label', 'Tabuleiro de xadrez');
+      this.squares = {};
+      this._build();
+      el.addEventListener('pointerdown', (e) => this._onDown(e));
+      el.addEventListener('pointermove', (e) => this._onMove(e));
+      el.addEventListener('pointerup', (e) => this._onUp(e));
+      el.addEventListener('pointercancel', () => this._cancelDrag());
+      el.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    /** Cria as 64 casas (na ordem visual conforme a orientação). */
+    _build() {
+      this.el.innerHTML = '';
+      this.squares = {};
+      for (let r = 0; r < 8; r++) {
+        for (let f = 0; f < 8; f++) {
+          const file = this.orientation === 'w' ? f : 7 - f;
+          const rank = this.orientation === 'w' ? 8 - r : r + 1;
+          const name = FILES[file] + rank;
+          const d = document.createElement('div');
+          d.className = 'sq ' + ((file + rank) % 2 === 0 ? 'dark' : 'light');
+          d.dataset.sq = name;
+          d.setAttribute('role', 'gridcell');
+          if (f === 0) d.insertAdjacentHTML('beforeend', `<span class="coord rank">${rank}</span>`);
+          if (r === 7) d.insertAdjacentHTML('beforeend', `<span class="coord file">${FILES[file]}</span>`);
+          this.el.appendChild(d);
+          this.squares[name] = d;
+        }
+      }
+    }
+
+    flip() { this.setOrientation(this.orientation === 'w' ? 'b' : 'w'); }
+    setOrientation(o) {
+      if (o === this.orientation) return;
+      this.orientation = o;
+      this._build();
+      this.render();
+    }
+    setInteractive(v) { this.opts.interactive = v; this.el.classList.toggle('readonly', !v); this._clearSelection(); this.render(); }
+
+    /** Atualiza a posição. `board` = chess.board() (matriz 8x8). */
+    set(state) {
+      this.state = Object.assign({ lastMove: null, check: null }, state);
+      this.selected = null; this.targets = [];
+      this.render();
+    }
+
+    render() {
+      const { board, lastMove, check } = this.state;
+      if (!board) return;
+      const names = XD.Pieces.NAMES;
+      for (let r = 0; r < 8; r++) {
+        for (let f = 0; f < 8; f++) {
+          const cell = board[r][f];
+          const sqName = FILES[f] + (8 - r);
+          const d = this.squares[sqName];
+          // remove só a peça antiga; mantém as coordenadas
+          const old = d.querySelector('.piece'); if (old) old.remove();
+          if (cell) d.insertAdjacentHTML('afterbegin', XD.Pieces.pieceHtml(cell.color, cell.type));
+          d.setAttribute('aria-label', cell ? `${sqName}, ${names[cell.type]} ${cell.color === 'w' ? 'branco' : 'preto'}` : sqName);
+          d.classList.toggle('last', !!lastMove && (lastMove.from === sqName || lastMove.to === sqName));
+          d.classList.toggle('check', check === sqName);
+          const isSel = this.selected === sqName;
+          d.classList.toggle('selected', isSel);
+          const isTarget = this.targets.includes(sqName);
+          d.classList.toggle('target', isTarget);
+          d.classList.toggle('capture', isTarget && !!cell);
+          d.classList.remove('hover');
+        }
+      }
+    }
+
+    _clearSelection() { this.selected = null; this.targets = []; }
+
+    _select(sq) {
+      this.selected = sq;
+      this.targets = this.opts.getTargets(sq) || [];
+      this.render();
+    }
+
+    _sqFromEvent(e) {
+      const t = document.elementFromPoint(e.clientX, e.clientY);
+      const s = t && t.closest ? t.closest('.sq') : null;
+      return s && this.el.contains(s) ? s.dataset.sq : null;
+    }
+
+    _onDown(e) {
+      if (!this.opts.interactive || (e.pointerType === 'mouse' && e.button !== 0)) return;
+      const sq = this._sqFromEvent(e);
+      if (!sq) return;
+      const wasSelected = this.selected === sq;
+      const isTarget = this.selected && this.targets.includes(sq);
+      let canDrag = false;
+      if (!isTarget) {
+        const t = this.opts.getTargets(sq) || [];
+        if (t.length) { this._select(sq); canDrag = true; }
+      }
+      this.down = { sq, x: e.clientX, y: e.clientY, wasSelected, isTarget, canDrag, dragging: false, pid: e.pointerId };
+      try { this.el.setPointerCapture(e.pointerId); } catch (err) { /* ok */ }
+    }
+
+    _onMove(e) {
+      const d = this.down;
+      if (!d || e.pointerId !== d.pid) return;
+      if (!d.dragging && d.canDrag && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8) this._startDrag(e);
+      if (d.dragging) {
+        const size = this.squares[d.sq].getBoundingClientRect().width * 1.2;
+        this.ghost.style.width = this.ghost.style.height = size + 'px';
+        this.ghost.style.transform = `translate(${e.clientX - size / 2}px, ${e.clientY - size / 2}px)`;
+        const over = this._sqFromEvent(e);
+        for (const k in this.squares) this.squares[k].classList.toggle('hover', k === over && this.targets.includes(k));
+      }
+    }
+
+    _startDrag(e) {
+      const d = this.down, src = this.squares[d.sq], piece = src.querySelector('.piece');
+      if (!piece) return;
+      d.dragging = true;
+      this.ghost = document.createElement('div');
+      this.ghost.className = 'drag-ghost';
+      this.ghost.appendChild(piece.cloneNode(true));
+      document.body.appendChild(this.ghost);
+      piece.style.opacity = '0.25';
+    }
+
+    _cancelDrag() {
+      if (this.ghost) { this.ghost.remove(); this.ghost = null; }
+      this.down = null;
+      this.render();
+    }
+
+    _onUp(e) {
+      const d = this.down;
+      if (!d || e.pointerId !== d.pid) return;
+      const sq = this._sqFromEvent(e);
+      const from = this.selected;
+      this.down = null;
+      try { this.el.releasePointerCapture(e.pointerId); } catch (err) { /* ok */ }
+      if (d.dragging) {
+        this.ghost.remove(); this.ghost = null;
+        if (sq && sq !== d.sq && this.targets.includes(sq)) { this._finish(d.sq, sq); return; }
+        this.render();                      // soltou fora: peça volta, seleção continua
+        return;
+      }
+      if (d.isTarget && sq === d.sq && from) { this._finish(from, sq); return; }
+      if (d.wasSelected && sq === d.sq) { this._clearSelection(); this.render(); return; }
+      if (!d.canDrag) { this._clearSelection(); this.render(); }
+    }
+
+    _finish(from, to) {
+      this._clearSelection();
+      this.render();
+      this.opts.onMove(from, to);
+    }
+  }
+
+  XD.Board = Board;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * ui.js — Pequenas ferramentas de interface reutilizadas pelas telas:
+ * avisos (toast), janelas (confirmar / pedir texto / escolher promoção),
+ * lista de lances e formatação de datas.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /** Aviso curto que some sozinho. kind: 'ok' | 'erro' | '' */
+  function toast(msg, kind) {
+    const host = document.getElementById('toasts');
+    const t = document.createElement('div');
+    t.className = 'toast ' + (kind || '');
+    t.setAttribute('role', kind === 'erro' ? 'alert' : 'status');
+    t.textContent = msg;
+    host.appendChild(t);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, kind === 'erro' ? 4500 : 2600);
+  }
+
+  /**
+   * Abre uma janela modal e devolve uma Promise com o valor escolhido.
+   * `build(box, done)` monta o conteúdo; chame done(valor) para fechar.
+   * Esc ou toque fora = done(null).
+   */
+  function modal(build) {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'modal-back';
+      const box = document.createElement('div');
+      box.className = 'modal';
+      box.setAttribute('role', 'dialog');
+      box.setAttribute('aria-modal', 'true');
+      back.appendChild(box);
+      const prevFocus = document.activeElement;
+      const done = (v) => {
+        document.removeEventListener('keydown', onKey);
+        back.remove();
+        if (prevFocus && prevFocus.focus) prevFocus.focus();
+        resolve(v);
+      };
+      const onKey = (e) => { if (e.key === 'Escape') done(null); };
+      document.addEventListener('keydown', onKey);
+      back.addEventListener('pointerdown', (e) => { if (e.target === back) done(null); });
+      build(box, done);
+      document.body.appendChild(back);
+      const f = box.querySelector('[data-autofocus]') || box.querySelector('button');
+      if (f) f.focus();
+    });
+  }
+
+  /** Confirmação. Devolve true/false. */
+  function confirmBox(title, text, okLabel, danger) {
+    return modal((box, done) => {
+      box.innerHTML = `<h3>${esc(title)}</h3><p>${esc(text)}</p>
+        <div class="modal-actions"><button class="btn" data-v="0">Cancelar</button>
+        <button class="btn ${danger ? 'danger' : 'primary'}" data-v="1" data-autofocus>${esc(okLabel || 'Confirmar')}</button></div>`;
+      box.querySelectorAll('[data-v]').forEach((b) => b.addEventListener('click', () => done(b.dataset.v === '1')));
+    }).then((v) => v === true);
+  }
+
+  /**
+   * Pede um texto. Devolve a string (ou null se cancelou).
+   * extra: [{label, value}] botões adicionais (ex.: "Salvar como nova") → devolve {text, action}
+   */
+  function promptBox(title, label, initial, okLabel, extra) {
+    return modal((box, done) => {
+      box.innerHTML = `<h3>${esc(title)}</h3>
+        <label class="field"><span>${esc(label)}</span>
+        <input type="text" maxlength="80" value="${esc(initial || '')}" data-autofocus autocomplete="off"></label>
+        <p class="field-error" role="alert" hidden></p>
+        <div class="modal-actions"><button class="btn" data-a="cancel">Cancelar</button>
+        ${(extra || []).map((x) => `<button class="btn" data-a="${esc(x.value)}">${esc(x.label)}</button>`).join('')}
+        <button class="btn primary" data-a="ok">${esc(okLabel || 'OK')}</button></div>`;
+      const input = box.querySelector('input'), err = box.querySelector('.field-error');
+      const submit = (action) => {
+        const text = input.value.trim();
+        if (!text) { err.textContent = 'Digite um título.'; err.hidden = false; input.focus(); return; }
+        done({ text, action });
+      };
+      box.querySelectorAll('[data-a]').forEach((b) => b.addEventListener('click', () => (b.dataset.a === 'cancel' ? done(null) : submit(b.dataset.a))));
+      input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit('ok'); });
+      input.select();
+    });
+  }
+
+  /** Escolha da peça de promoção. Devolve 'q' | 'r' | 'b' | 'n' ou null. */
+  function promotionBox(color) {
+    const names = { q: 'Dama', r: 'Torre', b: 'Bispo', n: 'Cavalo' };
+    return modal((box, done) => {
+      box.classList.add('promo');
+      box.innerHTML = `<h3>Promover o peão para…</h3><div class="promo-grid">
+        ${['q', 'r', 'b', 'n'].map((t) => `<button class="promo-btn" data-p="${t}" aria-label="${names[t]}">${XD.Pieces.pieceHtml(color, t)}<span>${names[t]}</span></button>`).join('')}
+        </div><div class="modal-actions"><button class="btn" data-c>Cancelar</button></div>`;
+      box.querySelectorAll('[data-p]').forEach((b) => b.addEventListener('click', () => done(b.dataset.p)));
+      box.querySelector('[data-c]').addEventListener('click', () => done(null));
+    });
+  }
+
+  /** Data legível em pt-BR, ex.: 26/10/2026 05:53 */
+  function fmtDate(iso) {
+    const d = new Date(iso);
+    if (isNaN(d)) return '—';
+    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /**
+   * Desenha a lista de lances ("1. e4 e5 2. Nf3 …") dentro de `el`.
+   * Cada lance é um botão: tocar nele vai até aquela posição (onJump(cursor)).
+   */
+  function renderMoveList(el, session, onJump) {
+    const info = session.firstMoveInfo();
+    const sans = session.moves;
+    if (!sans.length) { el.innerHTML = '<p class="muted small">Nenhum lance ainda.</p>'; return; }
+    let html = '<ol class="moves">', i = 0, num = info.number;
+    const cell = (idx) => `<button class="mv${idx + 1 === session.cursor ? ' cur' : ''}" data-i="${idx + 1}">${esc(sans[idx].san)}</button>`;
+    if (info.color === 'b') { html += `<li><span class="n">${num}.</span><span class="mv ph">…</span>${cell(0)}</li>`; i = 1; num++; }
+    for (; i < sans.length; i += 2, num++) {
+      html += `<li><span class="n">${num}.</span>${cell(i)}${i + 1 < sans.length ? cell(i + 1) : ''}</li>`;
+    }
+    html += '</ol>';
+    el.innerHTML = html;
+    el.querySelectorAll('button.mv').forEach((b) => b.addEventListener('click', () => onJump(parseInt(b.dataset.i, 10))));
+    const cur = el.querySelector('.mv.cur');
+    if (cur) {                                    // rola só a lista (não a página inteira)
+      const top = cur.offsetTop - el.offsetTop;
+      if (top < el.scrollTop || top > el.scrollTop + el.clientHeight - 40) el.scrollTop = Math.max(0, top - el.clientHeight / 2);
+    } else el.scrollTop = 0;
+  }
+
+  /** Copia texto; usa a API moderna e, se falhar, o método antigo. */
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      try {
+        const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove(); return ok;
+      } catch (e2) { return false; }
+    }
+  }
+
+  XD.ui = { esc, toast, modal, confirmBox, promptBox, promotionBox, fmtDate, renderMoveList, copyText };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * review.js — Revisão de uma partida/linha: tabuleiro somente-leitura +
+ * botões ⏮ ◀ ▶ ⏭ + lista de lances clicável + legenda do lance atual.
+ * É usado tanto nas Aberturas quanto em Minhas Partidas (mesmo código, dois usos).
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+
+  class Review {
+    /**
+     * @param {{board:HTMLElement, nav:HTMLElement, moves:HTMLElement, caption:HTMLElement,
+     *          session:GameSession, flipBtn?:HTMLElement, onChange?:Function}} p
+     */
+    constructor(p) {
+      this.session = p.session;
+      this.els = p;
+      this.board = new XD.Board(p.board, { interactive: false });
+      this.board.el.classList.add('readonly');
+      p.nav.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => this.act(b.dataset.act)));
+      if (p.flipBtn) p.flipBtn.addEventListener('click', () => this.board.flip());
+      this.update();
+    }
+
+    act(a) {
+      const s = this.session;
+      if (a === 'first' || a === 'reset') s.goTo(0);
+      else if (a === 'prev') s.undo();
+      else if (a === 'next') s.redo();
+      else if (a === 'last') s.goTo(s.length);
+      this.update();
+    }
+
+    goTo(i) { this.session.goTo(i); this.update(); }
+
+    update() {
+      const s = this.session, { nav, moves, caption } = this.els;
+      this.board.set({ board: s.chess.board(), lastMove: s.lastMove(), check: s.checkSquare() });
+      const set = (a, off) => { const b = nav.querySelector(`[data-act="${a}"]`); if (b) b.disabled = off; };
+      set('first', !s.canUndo); set('prev', !s.canUndo); set('next', !s.canRedo); set('last', !s.canRedo); set('reset', !s.canUndo);
+      XD.ui.renderMoveList(moves, s, (i) => this.goTo(i));
+      caption.innerHTML = this.captionHtml();
+      if (this.els.onChange) this.els.onChange(this);
+    }
+
+    /** Texto: "Posição inicial" ou "Lance 3: Bc4", mais o estado (xeque/mate). */
+    captionHtml() {
+      const s = this.session, esc = XD.ui.esc;
+      if (s.cursor === 0) return s.length ? 'Posição inicial. Toque em ▶ para avançar.' : 'Posição inicial.';
+      const i = s.cursor - 1, info = s.firstMoveInfo();
+      const white = info.color === 'w' ? i % 2 === 0 : i % 2 === 1;
+      const num = info.number + Math.floor((i + (info.color === 'b' ? 1 : 0)) / 2);
+      let html = `Lance ${num}${white ? '.' : '…'} <strong>${esc(s.moves[i].san)}</strong> <span class="small">(${s.cursor} de ${s.length})</span>`;
+      const st = s.status();
+      if (st.kind === 'mate' || st.kind === 'afogamento' || st.kind === 'material') html += `<br><span class="small">${esc(st.text)}</span>`;
+      return html;
+    }
+  }
+
+  XD.Review = Review;
+
+  /** HTML dos 4 botões de navegação (reutilizado). */
+  XD.navRowHtml = function () {
+    return `<div class="nav-row" role="group" aria-label="Navegar pelos lances">
+      <button class="btn" data-act="first" type="button" aria-label="Ir para o início" title="Início">⏮</button>
+      <button class="btn" data-act="prev" type="button" aria-label="Lance anterior" title="Voltar">◀</button>
+      <button class="btn" data-act="next" type="button" aria-label="Próximo lance" title="Avançar">▶</button>
+      <button class="btn" data-act="last" type="button" aria-label="Ir para o fim" title="Fim">⏭</button></div>`;
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * free.js — Modo Livre: o usuário move brancas E pretas, sem adversário.
+ * As regras vêm do motor (via GameSession); aqui fica só a "cola" com a tela.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+  const $ = (id) => document.getElementById(id);
+
+  const Free = {
+    session: null,
+    linkedId: null,      // id da partida salva que está sendo editada (ou null)
+    linkedTitle: '',
+    board: null,
+    ready: false,
+
+    init() {
+      if (this.ready) return;
+      this.ready = true;
+      this.board = new XD.Board($('livre-board'), {
+        interactive: true,
+        getTargets: (sq) => this.session.targetsFrom(sq),
+        onMove: (from, to) => this.tryMove(from, to)
+      });
+      $('livre-undo').addEventListener('click', () => { this.session.undo(); this.update(); });
+      $('livre-redo').addEventListener('click', () => { this.session.redo(); this.update(); });
+      $('livre-flip').addEventListener('click', () => this.board.flip());
+      $('livre-restart').addEventListener('click', () => this.restart());
+      $('livre-new').addEventListener('click', () => this.newGame());
+      $('livre-save').addEventListener('click', () => this.save());
+      $('livre-fen-copy').addEventListener('click', async () => {
+        XD.ui.toast((await XD.ui.copyText(this.session.fen())) ? 'FEN copiada.' : 'Não foi possível copiar.', 'ok');
+      });
+      $('livre-fen-load').addEventListener('click', () => this.loadFen());
+    },
+
+    /** Chamado ao abrir a tela. `pending` vem de "Continuar analisando" / "Analisar nas aberturas". */
+    enter(pending) {
+      this.init();
+      if (pending) {
+        this.session = pending.session; this.linkedId = pending.linkedId || null; this.linkedTitle = pending.title || '';
+      } else if (!this.session) {
+        const d = XD.Store.loadDraft();                // continua de onde parou (mesmo após fechar o navegador)
+        if (d) {
+          this.session = d.session; this.linkedId = d.linkedId;
+          const g = d.linkedId && XD.Store.get(d.linkedId);
+          if (d.linkedId && !g) this.linkedId = null;  // a partida salva foi excluída
+          this.linkedTitle = g ? g.title : '';
+        } else this.session = new XD.GameSession();
+      }
+      this.update();
+    },
+
+    async tryMove(from, to) {
+      try {
+        let promotion;
+        if (this.session.needsPromotion(from, to)) {
+          const color = this.session.turn;
+          promotion = await XD.ui.promotionBox(color);
+          if (!promotion) { this.update(); return; }   // cancelou: nada acontece
+        }
+        this.session.play({ from, to, promotion });
+      } catch (e) {
+        XD.ui.toast(e.message, 'erro');
+      }
+      this.update();
+    },
+
+    update() {
+      const s = this.session, st = s.status();
+      this.board.set({ board: s.chess.board(), lastMove: s.lastMove(), check: s.checkSquare() });
+      const el = $('livre-status');
+      el.className = 'status' + (st.over ? ' end' : st.check ? ' alert' : '');
+      el.innerHTML = (st.over ? '' : `<span class="dot ${s.turn}" aria-hidden="true"></span>`) + `<span>${XD.ui.esc(st.text)}</span>`;
+      $('livre-undo').disabled = !s.canUndo;
+      $('livre-redo').disabled = !s.canRedo;
+      $('livre-restart').disabled = !s.length;
+      XD.ui.renderMoveList($('livre-moves'), s, (i) => { s.goTo(i); this.update(); });
+      $('livre-fen').value = s.fen();
+      $('livre-sub').textContent = this.linkedId
+        ? `Editando a partida salva "${this.linkedTitle}". Use Salvar para atualizá-la.`
+        : 'Mova as peças brancas e pretas. Toque na peça e depois na casa, ou arraste.';
+      XD.Store.saveDraft(s, this.linkedId);             // rascunho automático
+    },
+
+    async restart() {
+      if (!this.session.length) return;
+      if (!(await XD.ui.confirmBox('Reiniciar a partida?', 'Todos os lances serão apagados e as peças voltam à posição inicial desta partida.', 'Reiniciar', true))) return;
+      this.session.restart();
+      this.update();
+    },
+
+    async newGame() {
+      if (this.session.length && !(await XD.ui.confirmBox('Começar uma nova partida?', 'A partida atual deixará de ser exibida aqui. Se você não a salvou, ela será perdida.', 'Nova partida', true))) return;
+      this.session = new XD.GameSession();
+      this.linkedId = null; this.linkedTitle = '';
+      this.board.setOrientation('w');
+      this.update();
+    },
+
+    async save() {
+      const s = this.session;
+      if (!s.length) { XD.ui.toast('Faça pelo menos um lance antes de salvar.', 'erro'); return; }
+      const def = this.linkedTitle || 'Partida de ' + XD.ui.fmtDate(new Date().toISOString());
+      const r = await XD.ui.promptBox(
+        this.linkedId ? 'Atualizar partida salva' : 'Salvar partida', 'Título da partida', def,
+        this.linkedId ? 'Atualizar' : 'Salvar',
+        this.linkedId ? [{ label: 'Salvar como nova', value: 'new' }] : []);
+      if (!r) return;
+      try {
+        const rec = XD.Store.save({ id: r.action === 'new' ? undefined : this.linkedId, title: r.text, session: s });
+        this.linkedId = rec.id; this.linkedTitle = rec.title;
+        XD.ui.toast('Partida salva em "Minhas Partidas".', 'ok');
+        this.update();
+      } catch (e) { XD.ui.toast(e.message, 'erro'); }
+    },
+
+    async loadFen() {
+      const err = $('livre-fen-err'), fen = $('livre-fen-in').value.trim();
+      err.hidden = true;
+      const v = XD.Chess.validateFen(fen);
+      if (!v.ok) { err.textContent = v.error; err.hidden = false; return; }
+      if (this.session.length && !(await XD.ui.confirmBox('Carregar nova posição?', 'A partida atual será substituída.', 'Carregar', true))) return;
+      this.session = new XD.GameSession({ startFen: fen });
+      this.linkedId = null; this.linkedTitle = '';
+      $('livre-fen-in').value = '';
+      XD.ui.toast('Posição carregada.', 'ok');
+      this.update();
+    }
+  };
+
+  XD.Chess = root.Chess;
+  XD.Free = Free;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * openings.js — Biblioteca de Aberturas e Gambitos: lista com busca/filtro e tela de detalhe.
+ * Os dados ficam em openings-data.js; cada sequência é uma GameSession só de leitura.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+  const $ = (id) => document.getElementById(id);
+  const { esc } = XD.ui;
+
+  /** Remove acentos e maiúsculas: "López" casa com "lopez". */
+  const norm = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const tagHtml = (o) => `<span class="tag ${o.tipo === 'Gambito' ? 'gambito' : 'abertura'}">${esc(o.tipo)}</span>`;
+
+  const Openings = {
+    tipo: '', query: '', ready: false, review: null, current: null, variantIdx: 0,
+
+    /* ---------- Lista ---------- */
+    initList() {
+      if (this.ready) return;
+      this.ready = true;
+      $('op-search').addEventListener('input', (e) => { this.query = e.target.value; this.renderList(); });
+      document.querySelectorAll('.chip[data-tipo]').forEach((c) => c.addEventListener('click', () => {
+        this.tipo = c.dataset.tipo;
+        document.querySelectorAll('.chip[data-tipo]').forEach((x) => x.classList.toggle('on', x === c));
+        this.renderList();
+      }));
+    },
+
+    showList() {
+      this.initList();
+      this.renderList();
+    },
+
+    renderList() {
+      const { OPENINGS, CATEGORIAS } = root.OpeningsData, q = norm(this.query.trim());
+      const found = OPENINGS.filter((o) => (!this.tipo || o.tipo === this.tipo) &&
+        (!q || norm(o.nome).includes(q) || norm(o.variantes.map((v) => v.nome).join(' ')).includes(q)));
+      let html = '';
+      for (const key of Object.keys(CATEGORIAS)) {
+        const list = found.filter((o) => o.categoria === key);
+        if (!list.length) continue;
+        html += `<h2 class="cat-title">${esc(CATEGORIAS[key])}</h2><div class="op-grid">` +
+          list.map((o) => `<a class="op-card" href="#/aberturas/${esc(o.id)}">${tagHtml(o)}<h3>${esc(o.nome)}</h3><p>${esc(o.resumo)}</p></a>`).join('') + '</div>';
+      }
+      $('op-list').innerHTML = html || '<div class="empty">Nenhuma abertura encontrada. Tente outro nome ou limpe o filtro.</div>';
+    },
+
+    /* ---------- Detalhe ---------- */
+    showDetail(id) {
+      const o = root.OpeningsData.OPENINGS.find((x) => x.id === id);
+      if (!o) return false;
+      this.current = o; this.variantIdx = 0;
+      const cat = root.OpeningsData.CATEGORIAS[o.categoria];
+      $('op-detail').innerHTML = `
+        <div class="page-head">
+          <h1>${esc(o.nome)}</h1>
+          <p>${tagHtml(o)}<span class="muted small">${esc(cat)}</span></p>
+        </div>
+        <div class="detail-layout">
+          <div class="board-col">
+            <div id="opd-board"></div>
+            <div class="caption" id="opd-cap" role="status" aria-live="polite"></div>
+            <div id="opd-nav">${XD.navRowHtml()}</div>
+            <div class="row" style="justify-content:center">
+              <button class="btn" id="opd-reset" type="button" data-act="reset">⟲ Reiniciar sequência</button>
+              <button class="btn" id="opd-flip" type="button">⇅ Girar</button>
+              <button class="btn primary" id="opd-free" type="button">Analisar no Modo Livre</button>
+            </div>
+          </div>
+          <aside class="side-col">
+            <div class="panel">
+              <h2>Ideia principal</h2>
+              <p>${esc(o.ideia)}</p>
+              <div class="plans">
+                <div><b>Plano das brancas</b>${esc(o.planos.brancas)}</div>
+                <div><b>Plano das pretas</b>${esc(o.planos.pretas)}</div>
+              </div>
+            </div>
+            <div class="panel">
+              <h2>Variantes</h2>
+              <div class="variants" id="opd-variants" role="group" aria-label="Variantes">
+                ${o.variantes.map((v, i) => `<button class="chip${i === 0 ? ' on' : ''}" data-v="${i}" type="button">${esc(v.nome)}</button>`).join('')}
+              </div>
+              <p class="muted small" id="opd-vdesc"></p>
+              <div id="opd-moves" class="move-box"></div>
+            </div>
+          </aside>
+        </div>`;
+      this.loadVariant(0, true);
+      $('opd-variants').querySelectorAll('.chip').forEach((c) => c.addEventListener('click', () => this.loadVariant(parseInt(c.dataset.v, 10))));
+      $('opd-free').addEventListener('click', () => this.analyze());
+      return true;
+    },
+
+    loadVariant(i, first) {
+      const v = this.current.variantes[i];
+      this.variantIdx = i;
+      $('opd-variants').querySelectorAll('.chip').forEach((c, k) => c.classList.toggle('on', k === i));
+      $('opd-vdesc').textContent = v.descricao;
+      const session = XD.GameSession.fromSan(v.lances);   // lança erro se algum lance for ilegal
+      session.goTo(0);
+      if (first) {
+        this.review = new XD.Review({
+          board: $('opd-board'), nav: $('opd-nav').parentElement, moves: $('opd-moves'),
+          caption: $('opd-cap'), session, flipBtn: $('opd-flip')
+        });
+      } else {
+        this.review.session = session;
+        this.review.update();
+      }
+    },
+
+    /** Leva a posição atual da abertura para o Modo Livre (com os lances até aqui). */
+    analyze() {
+      const s = this.review.session;
+      const copy = new XD.GameSession({ startFen: s.startFen, moves: s.moves.slice(0, s.cursor) });
+      XD.pendingFree = { session: copy, linkedId: null, title: '' };
+      XD.go('#/livre');
+    }
+  };
+
+  XD.Openings = Openings;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/*
+ * games.js — Minhas Partidas: lista, revisão, renomear, excluir e "continuar analisando".
+ * Os dados vêm do Store (localStorage); a revisão usa o mesmo componente das aberturas.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD = root.XD || {};
+  const $ = (id) => document.getElementById(id);
+  const { esc, fmtDate } = XD.ui;
+
+  const RESULT = { '1-0': 'Brancas venceram', '0-1': 'Pretas venceram', '1/2-1/2': 'Empate', '*': 'Em andamento' };
+
+  const Games = {
+    review: null, current: null,
+
+    /* ---------- Lista ---------- */
+    showList() {
+      const games = XD.Store.list();
+      $('games-warn').innerHTML = XD.Store.warnings.map((w) => `<div class="notice" role="alert">${esc(w)}</div>`).join('');
+      const host = $('games-list');
+      if (!games.length) {
+        host.innerHTML = `<div class="empty"><p><strong>Você ainda não salvou nenhuma partida.</strong></p>
+          <p>Jogue no Modo Livre e toque em <em>Salvar</em> para guardá-la aqui.</p>
+          <a class="btn primary" href="#/livre">Ir para o Modo Livre</a></div>`;
+        return;
+      }
+      host.innerHTML = '<div class="game-list">' + games.map((g) => `
+        <article class="game" data-id="${esc(g.id)}">
+          <h3>${esc(g.title)}</h3>
+          <div class="meta">${esc(fmtDate(g.createdAt))} · ${g.moves.length} lance${g.moves.length === 1 ? '' : 's'}
+            <span class="badge">${esc(RESULT[g.result] || '')}</span></div>
+          <div class="row">
+            <a class="btn primary sm" href="#/partidas/${esc(g.id)}">Abrir</a>
+            <button class="btn sm" data-act="rename" type="button">Renomear</button>
+            <button class="btn danger sm" data-act="delete" type="button">Excluir</button>
+          </div>
+        </article>`).join('') + '</div>';
+      host.querySelectorAll('.game').forEach((card) => {
+        const id = card.dataset.id, g = games.find((x) => x.id === id);
+        card.querySelector('[data-act="rename"]').addEventListener('click', () => this.rename(g, () => this.showList()));
+        card.querySelector('[data-act="delete"]').addEventListener('click', () => this.remove(g, () => this.showList()));
+      });
+    },
+
+    async rename(g, after) {
+      const r = await XD.ui.promptBox('Renomear partida', 'Novo título', g.title, 'Renomear');
+      if (!r) return;
+      try { XD.Store.rename(g.id, r.text); XD.ui.toast('Partida renomeada.', 'ok'); after(); }
+      catch (e) { XD.ui.toast(e.message, 'erro'); }
+    },
+
+    async remove(g, after) {
+      const ok = await XD.ui.confirmBox('Excluir partida?', `"${g.title}" será apagada definitivamente. Esta ação não pode ser desfeita.`, 'Excluir', true);
+      if (!ok) return;
+      try { XD.Store.remove(g.id); XD.ui.toast('Partida excluída.', 'ok'); after(); }
+      catch (e) { XD.ui.toast(e.message, 'erro'); }
+    },
+
+    /* ---------- Revisão de uma partida salva ---------- */
+    showDetail(id) {
+      const g = XD.Store.get(id);
+      if (!g) return false;
+      this.current = g;
+      const startIsDefault = g.startFen === root.Chess.START_FEN;
+      $('game-detail').innerHTML = `
+        <div class="game-head">
+          <div><h1 id="gd-title">${esc(g.title)}</h1>
+            <p class="muted small">Criada em ${esc(fmtDate(g.createdAt))} · ${g.moves.length} lance${g.moves.length === 1 ? '' : 's'}
+              <span class="badge">${esc(RESULT[g.result] || '')}</span></p></div>
+        </div>
+        <div class="detail-layout">
+          <div class="board-col">
+            <div id="gd-board"></div>
+            <div class="caption" id="gd-cap" role="status" aria-live="polite"></div>
+            <div id="gd-nav">${XD.navRowHtml()}</div>
+            <div class="game-actions" style="justify-content:center">
+              <button class="btn" id="gd-flip" type="button">⇅ Girar</button>
+              <button class="btn primary" id="gd-continue" type="button">Continuar analisando</button>
+            </div>
+          </div>
+          <aside class="side-col">
+            <div class="panel"><h2>Lances</h2><div id="gd-moves" class="move-box"></div></div>
+            <div class="panel">
+              <h2>Posições</h2>
+              <label class="field"><span>Posição inicial ${startIsDefault ? '(padrão)' : '(personalizada)'}</span>
+                <input type="text" readonly value="${esc(g.startFen)}"></label>
+              <label class="field"><span>Posição final</span><input type="text" readonly value="${esc(g.finalFen)}"></label>
+              <div class="game-actions">
+                <button class="btn" id="gd-rename" type="button">Renomear</button>
+                <button class="btn danger" id="gd-delete" type="button">Excluir</button>
+              </div>
+            </div>
+          </aside>
+        </div>`;
+      const session = new XD.GameSession({ startFen: g.startFen, moves: g.moves });
+      session.goTo(0);                                  // começa a revisão na posição inicial
+      this.review = new XD.Review({ board: $('gd-board'), nav: $('gd-nav'), moves: $('gd-moves'), caption: $('gd-cap'), session, flipBtn: $('gd-flip') });
+      $('gd-continue').addEventListener('click', () => {
+        const s = this.review.session;
+        const copy = new XD.GameSession({ startFen: s.startFen, moves: s.moves, cursor: s.cursor });
+        XD.pendingFree = { session: copy, linkedId: this.current.id, title: this.current.title };  // título atual (pode ter sido renomeado)
+        XD.go('#/livre');
+      });
+      $('gd-rename').addEventListener('click', () => this.rename(this.current, () => { this.current = XD.Store.get(id); $('gd-title').textContent = this.current.title; }));
+      $('gd-delete').addEventListener('click', () => this.remove(this.current, () => { XD.go('#/partidas'); }));
+      return true;
+    }
+  };
+
+  XD.Games = Games;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+  <script>
+/* lab.js — Ferramentas extras: IA local, desafio tático, PGN, FEN e estatísticas. */
+(function(root){
+ 'use strict';
+ const XD=root.XD, $=id=>document.getElementById(id);
+ const Lab={
+  ready:false, ai:null, aiBoard:null, aiStartFen:null, aiMoves:[], humanColor:'w', level:1, busy:false, token:0, clockEnabled:300, clockRemaining:{w:300,b:300}, clockLastTick:0, clockRunning:false, clockFlag:null, clockInterval:null, puzzle:null, puzzleBoard:null, puzzleIndex:0, puzzleSolved:0, editorBoard:null, editorClearMode:false, editorSelected:null,
+  puzzles:[
+   {fen:'7k/5Q2/6K1/8/8/8/8/8 w - - 0 1',solution:'Qf8#',hint:'A dama pode dar xeque na oitava fileira, enquanto o rei branco controla as casas de fuga.',explain:'A dama em f8 dá xeque-mate: o rei preto não tem casa segura nem pode capturar a dama.'},
+   {fen:'7k/8/5KQ1/8/8/8/8/8 w - - 0 1',solution:'Qg7#',hint:'A dama pode se aproximar do rei preto com proteção do rei branco.',explain:'Dama em g7 é xeque-mate: o rei preto fica sem casas de fuga.'}
+  ],
+  enter(){if(!this.ready)this.init();this.refreshPGNGames();this.renderStats();},
+  init(){this.ready=true;
+   document.querySelectorAll('[data-lab-tab]').forEach(b=>b.addEventListener('click',()=>this.tab(b.dataset.labTab)));
+   this.ai=new root.Chess();this.aiStartFen=root.Chess.START_FEN;
+   this.aiBoard=new XD.Board($('lab-ai-board'),{interactive:true,getTargets:sq=>this.ai?this.ai.moves({square:sq,verbose:true}).map(m=>m.to):[],onMove:(from,to)=>this.humanMove(from,to)});
+   this.newAI();
+   $('lab-clock-setting').addEventListener('change',e=>{this.clockEnabled=Number(e.target.value)||0;this.resetClock();});
+   if(this.clockInterval)clearInterval(this.clockInterval);
+   this.clockInterval=setInterval(()=>this.tickClock(),250);
+   $('lab-ai-level').addEventListener('change',e=>{this.level=Number(e.target.value)||1;});
+   $('lab-ai-color').addEventListener('change',()=>this.newAI());
+   $('lab-ai-new').addEventListener('click',()=>this.newAI());
+   $('lab-ai-undo').addEventListener('click',()=>this.undoAI());
+   $('lab-ai-flip').addEventListener('click',()=>this.aiBoard.flip());
+   $('lab-ai-save').addEventListener('click',()=>this.saveAI());
+   $('lab-pgn-export').addEventListener('click',()=>this.exportPGN());
+   $('lab-pgn-download').addEventListener('click',()=>this.downloadPGN());
+   $('lab-pgn-import').addEventListener('click',()=>this.importPGN());
+   $('lab-analysis-current').addEventListener('click',()=>{ $('lab-analysis-fen').value=this.ai.fen(); $('lab-analysis-message').textContent='Posição atual da partida contra IA carregada.'; });
+   $('lab-analysis-saved').addEventListener('click',()=>this.loadSavedAnalysisPosition());
+   $('lab-analysis-start').addEventListener('click',()=>{ $('lab-analysis-fen').value=root.Chess.START_FEN; $('lab-analysis-message').textContent='Posição inicial carregada.'; });
+   $('lab-analysis-open').addEventListener('click',()=>this.openExternalAnalysis());
+   $('lab-analysis-cloud').addEventListener('click',()=>this.queryCloudEval());
+   $('lab-analysis-explorer').addEventListener('click',()=>this.queryOpeningExplorer());
+   $('lab-analysis-copy').addEventListener('click',()=>this.copyAnalysisFEN());
+   $('lab-pgn-game').addEventListener('change',()=>{});
+   $('lab-fen-start').addEventListener('click',()=>{$('lab-fen').value=root.Chess.START_FEN;$('lab-fen-message').textContent='Posição inicial carregada.';});
+   $('lab-fen-open').addEventListener('click',()=>this.openFEN());
+   this.editorPosition=new root.Chess();this.editorPieces=this.editorPosition.board();
+   this.editorBoard=new XD.Board($('lab-editor-board'),{interactive:false});
+   this.editorBoard.set({board:this.editorPosition.board(),lastMove:null,check:null});
+   $('lab-editor-board').addEventListener('click',e=>{const sq=e.target.closest('.sq');if(!sq)return;this.editSquare(sq.dataset.sq);});
+   $('lab-editor-clear').addEventListener('click',()=>{this.editorClearMode=true;$('lab-editor-message').textContent='Modo apagar ativo: toque nas casas que deseja limpar.';});
+   $('lab-editor-piece').addEventListener('change',()=>{this.editorClearMode=false;$('lab-editor-message').textContent='Peça selecionada. Toque numa casa para colocá-la.';});
+   $('lab-editor-reset').addEventListener('click',()=>{this.editorPosition=new root.Chess();this.editorPieces=this.editorPosition.board();this.editorBoard.set({board:this.editorPieces,lastMove:null,check:null});this.editorClearMode=false;$('lab-editor-turn').value='w';$('lab-editor-message').textContent='Tabuleiro inicial restaurado.';});
+   $('lab-editor-fen').addEventListener('click',()=>this.generateEditorFEN(false));
+   $('lab-editor-open').addEventListener('click',()=>this.generateEditorFEN(true));
+   $('lab-stats-refresh').addEventListener('click',()=>this.renderStats());
+   $('lab-back-games').addEventListener('click',()=>XD.go('#/partidas'));
+   $('lab-puzzle-reset').addEventListener('click',()=>this.loadPuzzle());
+   $('lab-puzzle-hint').addEventListener('click',()=>{$('lab-puzzle-explain').textContent=this.puzzle?this.puzzle.hint:'';});
+   $('lab-puzzle-next').addEventListener('click',()=>{this.puzzleIndex=(this.puzzleIndex+1)%this.puzzles.length;this.loadPuzzle();});
+   this.loadPuzzle();
+  },
+  tab(name){document.querySelectorAll('[data-lab-tab]').forEach(b=>b.classList.toggle('primary',b.dataset.labTab===name));document.querySelectorAll('[data-lab-pane]').forEach(p=>p.hidden=p.dataset.labPane!==name);if(name==='stats')this.renderStats();if(name==='pgn')this.refreshPGNGames();},
+  setAIStatus(text,end){const e=$('lab-ai-status');e.textContent=text;e.classList.toggle('end',!!end);e.classList.toggle('alert',/xeque/i.test(text)&&!/mate/i.test(text));},
+  updateAIBoard(last){const c=this.ai;let check=null;if(c.isCheck()){for(const row of c.board())for(const p of row)if(p&&p.type==='k'&&p.color===c.turn())check=p.square;}this.aiBoard.set({board:c.board(),lastMove:last||null,check});
+   const moves=this.ai.history({verbose:true});let html='';for(let i=0;i<moves.length;i+=2){const w=moves[i],b=moves[i+1];html+=`<li><span class="n">${Math.floor(i/2)+1}.</span><span class="mv">${XD.ui.esc(w.san)}</span><span class="mv">${b?XD.ui.esc(b.san):''}</span></li>`;} $('lab-ai-moves').innerHTML=html?`<ol class="moves">${html}</ol>`:'<p class="muted small">A partida ainda não tem lances.</p>';
+   const st=this.ai.isCheckmate()?(this.ai.turn()==='w'?'Xeque-mate! Pretas venceram.':'Xeque-mate! Brancas venceram.'):this.ai.isStalemate()?'Empate por afogamento.':this.ai.isDraw()?'Empate.':this.ai.isCheck()?'Xeque!':`Vez das ${this.ai.turn()==='w'?'brancas':'pretas'}.`;
+   this.setAIStatus((this.busy?'A IA está pensando… ': '')+st,this.ai.isGameOver());
+  },
+  resetClock(){this.clockRemaining={w:this.clockEnabled,b:this.clockEnabled};this.clockRunning=false;this.clockLastTick=0;this.clockFlag=null;this.renderClock();},
+  formatClock(seconds){seconds=Math.max(0,Math.ceil(seconds));return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');},
+  renderClock(){['w','b'].forEach(color=>{const el=$('lab-clock-'+(color==='w'?'white':'black'));if(!el)return;el.querySelector('strong').textContent=this.clockEnabled?this.formatClock(this.clockRemaining[color]):'∞';el.classList.toggle('active',this.clockEnabled>0&&this.clockRunning&&this.ai&&!this.ai.isGameOver()&&this.ai.turn()===color&&!this.clockFlag);el.classList.toggle('flag',this.clockFlag===color);});},
+  tickClock(){if(!this.clockEnabled||!this.clockRunning||this.clockFlag||!this.ai||this.ai.isGameOver())return;const now=Date.now();if(!this.clockLastTick){this.clockLastTick=now;return;}const elapsed=(now-this.clockLastTick)/1000;this.clockLastTick=now;const side=this.ai.turn();this.clockRemaining[side]=Math.max(0,this.clockRemaining[side]-elapsed);if(this.clockRemaining[side]<=0){this.clockFlag=side;this.clockRunning=false;this.token++;this.busy=false;this.setAIStatus((side==='w'?'As brancas':'As pretas')+' perderam por tempo. Inicie uma nova partida para jogar novamente.',true);}this.renderClock();},
+  startClockIfNeeded(){if(this.clockEnabled&&!this.clockRunning&&!this.clockFlag){this.clockRunning=true;this.clockLastTick=Date.now();this.renderClock();}},
+  newAI(){this.token++;this.busy=false;this.level=Number($('lab-ai-level').value)||1;this.humanColor=$('lab-ai-color').value||'w';this.ai=new root.Chess();this.aiStartFen=root.Chess.START_FEN;this.aiMoves=[];this.clockEnabled=Number($('lab-clock-setting').value)||0;this.resetClock();this.aiBoard.setOrientation(this.humanColor==='w'?'w':'b');this.updateAIBoard(null);if(this.humanColor==='b')setTimeout(()=>this.aiMove(),80);},
+  humanMove(from,to){if(this.busy||this.clockFlag||this.ai.isGameOver()||this.ai.turn()!==this.humanColor)return;let piece=this.ai.get(from);let promo=piece&&piece.type==='p'&&((piece.color==='w'&&to.endsWith('8'))||(piece.color==='b'&&to.endsWith('1')))?'q':undefined;try{const m=this.ai.move({from,to,promotion:promo});this.aiMoves.push({from,to,promotion:promo||undefined});this.startClockIfNeeded();this.updateAIBoard(m);this.renderClock();if(!this.ai.isGameOver())setTimeout(()=>this.aiMove(),40);}catch(e){XD.ui.toast('Lance inválido.','erro');}},
+  aiMove(){if(!this.ai||this.clockFlag||this.ai.isGameOver()||this.ai.turn()===this.humanColor)return;const myToken=++this.token;this.busy=true;this.setAIStatus('A IA está pensando…');setTimeout(()=>{if(myToken!==this.token||this.clockFlag)return;try{const move=this.chooseMove();if(move){const m=this.ai.move({from:move.from,to:move.to,promotion:move.promotion||'q'});this.aiMoves.push({from:move.from,to:move.to,promotion:move.promotion||undefined});this.startClockIfNeeded();this.busy=false;this.updateAIBoard(m);this.renderClock();}else{this.busy=false;this.updateAIBoard(null);}}catch(e){this.busy=false;this.setAIStatus('A IA encontrou um problema: '+e.message,true);}},30);},
+  evaluate(chess){if(chess.isCheckmate())return chess.turn()==='w'?-100000:100000;if(chess.isDraw())return 0;const val={p:100,n:320,b:335,r:500,q:900,k:0};let score=0;const board=chess.board();for(let r=0;r<8;r++)for(let f=0;f<8;f++){const p=board[r][f];if(!p)continue;const sign=p.color==='w'?1:-1;score+=sign*val[p.type];if(p.type==='p')score+=sign*(p.color==='w'?(6-r):(r-1))*5;if(['n','b','q'].includes(p.type))score+=sign*(3.5-Math.abs(3.5-f)+3.5-Math.abs(3.5-r))*2;}return score;},
+  search(chess,depth,alpha,beta,ply){if(depth<=0||chess.isGameOver())return this.evaluate(chess)+(chess.isCheckmate()?(chess.turn()==='w'?-ply:ply):0);const moves=chess.moves({verbose:true});if(!moves.length)return this.evaluate(chess);moves.sort((a,b)=>(b.captured?10:0)+(b.promotion?8:0)-((a.captured?10:0)+(a.promotion?8:0)));const maximizing=chess.turn()==='w';let best=maximizing?-Infinity:Infinity;for(const m of moves){chess.move({from:m.from,to:m.to,promotion:m.promotion||'q'});const v=this.search(chess,depth-1,alpha,beta,ply+1);chess.undo();if(maximizing){best=Math.max(best,v);alpha=Math.max(alpha,best);}else{best=Math.min(best,v);beta=Math.min(beta,best);}if(beta<=alpha)break;}return best;},
+  chooseMove(){const moves=this.ai.moves({verbose:true});if(!moves.length)return null;if(this.level===1)return moves[Math.floor(Math.random()*moves.length)];const rootColor=this.ai.turn(),depth=this.level===2?1:this.level===3?2:3;let scored=[];for(const m of moves){this.ai.move({from:m.from,to:m.to,promotion:m.promotion||'q'});let score=this.search(this.ai,depth-1,-Infinity,Infinity,1);this.ai.undo();if(rootColor==='b')score=-score;score+=(Math.random()-.5)*(this.level===2?160:this.level===3?30:5);scored.push({move:m,score});}scored.sort((a,b)=>b.score-a.score);const pool=this.level===2?scored.slice(0,Math.min(5,scored.length)):this.level===3?scored.slice(0,Math.min(2,scored.length)):scored.slice(0,1);return pool[Math.floor(Math.random()*pool.length)].move;},
+  undoAI(){if(this.busy){this.token++;this.busy=false;}if(this.aiMoves.length){this.ai.undo();this.aiMoves.pop();if(this.aiMoves.length&&this.ai.turn()!==this.humanColor){this.ai.undo();this.aiMoves.pop();}}this.resetClock();this.updateAIBoard(null);},
+  saveAI(){if(!this.aiMoves.length){XD.ui.toast('Faça pelo menos um lance antes de salvar.','erro');return;}try{const session=new XD.GameSession({startFen:this.aiStartFen,moves:this.aiMoves});const result=XD.Store.save({title:`Partida contra IA · nível ${this.level}`,session});XD.ui.toast('Partida contra IA salva!','ok');this.refreshPGNGames();this.renderStats();}catch(e){XD.ui.toast('Não foi possível salvar: '+e.message,'erro');}},
+  refreshPGNGames(){const sel=$('lab-pgn-game');if(!sel)return;const old=sel.value;const games=XD.Store.list();sel.innerHTML='<option value="current">Partida atual contra IA</option>'+games.map(g=>`<option value="${XD.ui.esc(g.id)}">${XD.ui.esc(g.title)}</option>`).join('');if([...sel.options].some(o=>o.value===old))sel.value=old;},
+  pgnForSession(session,title){const chess=new root.Chess(session.startFen);const sans=[];for(const m of session.moves){const v=chess.move({from:m.from,to:m.to,promotion:m.promotion});sans.push(v.san);}const f=session.startFen.split(/\s+/);let out=`[Event "${(title||'Meu Xadrez').replace(/["\\]/g,'')} "]\n[Site "Meu Xadrez"]\n[Date "${new Date().toISOString().slice(0,10).replace(/-/g,'.')}"]\n[Result "${chess.isCheckmate()?(chess.turn()==='w'?'0-1':'1-0'):chess.isDraw()?'1/2-1/2':'*'}"]\n`;if(session.startFen!==root.Chess.START_FEN)out+=`[SetUp "1"]\n[FEN "${session.startFen}"]\n`;out+='\n';for(let i=0;i<sans.length;i++){if(i%2===0)out+=(Math.floor(i/2)+1)+'. ';out+=sans[i]+' ';}out+=chess.isCheckmate()?(chess.turn()==='w'?'0-1':'1-0'):chess.isDraw()?'1/2-1/2':'*';return out.trim()+'\n';},
+  selectedSession(){const id=$('lab-pgn-game').value;if(id==='current')return {session:new XD.GameSession({startFen:this.aiStartFen,moves:this.aiMoves}),title:`Partida contra IA nível ${this.level}`};const g=XD.Store.get(id);if(!g)throw new Error('Partida salva não encontrada.');return {session:new XD.GameSession({startFen:g.startFen,moves:g.moves}),title:g.title};},
+  exportPGN(){try{const o=this.selectedSession();$('lab-pgn-text').value=this.pgnForSession(o.session,o.title);XD.ui.toast('PGN preparado no campo.','ok');}catch(e){XD.ui.toast(e.message,'erro');}},
+  downloadPGN(){try{if(!$('lab-pgn-text').value.trim())this.exportPGN();const data=$('lab-pgn-text').value;if(!data.trim())return;const blob=new Blob([data],{type:'application/x-chess-pgn;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='minha-partida.pgn';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}catch(e){XD.ui.toast('Não foi possível gerar o arquivo PGN.','erro');}},
+  importPGN(){const raw=$('lab-pgn-text').value.trim();if(!raw){XD.ui.toast('Cole uma partida PGN primeiro.','erro');return;}try{let fen=root.Chess.START_FEN;const fm=raw.match(/^\[FEN\s+"([^"]+)"\]/mi);if(fm)fen=fm[1];const body=raw.replace(/^\s*\[[^\]]*\]\s*$/gm,'').replace(/\{[^}]*\}/g,' ').replace(/\([^)]*\)/g,' ').replace(/;[^\n]*/g,' ').replace(/\$\d+/g,' ');const tokens=body.split(/\s+/).filter(Boolean).filter(t=>!/^\d+\.{1,3}$/.test(t)&&!/^\d+\.+/.test(t)&&!['1-0','0-1','1/2-1/2','*'].includes(t));const chess=new root.Chess(fen),moves=[];for(const tok of tokens){const clean=tok.replace(/[!?+#]+$/g,'');if(!clean)continue;const v=chess.move(clean);moves.push({from:v.from,to:v.to,promotion:v.promotion});}if(!moves.length)throw new Error('Não encontrei lances legais no PGN.');const session=new XD.GameSession({startFen:fen,moves});const title=(raw.match(/^\[Event\s+"([^"]+)"\]/mi)||[])[1]||'Partida importada';XD.Store.save({title,session});XD.ui.toast('Partida PGN importada para Minhas Partidas.','ok');this.refreshPGNGames();this.renderStats();}catch(e){XD.ui.toast('PGN inválido ou incompatível: '+e.message,'erro');}},
+  loadSavedAnalysisPosition(){
+   try{
+    const games=XD.Store.list();
+    if(!games.length){$('lab-analysis-message').textContent='Você ainda não tem partidas salvas. Salve uma partida ou use a posição atual.';return;}
+    const options=games.map((g,i)=>`${i+1}. ${g.title}`).join('\n');
+    const answer=prompt('Digite o número da partida salva que deseja analisar:\n'+options,'1');
+    if(answer===null)return;
+    const index=Number(answer)-1;
+    if(!Number.isInteger(index)||index<0||index>=games.length)throw new Error('Número de partida inválido.');
+    const g=games[index], chess=new root.Chess(g.startFen);
+    for(const m of g.moves)chess.move({from:m.from,to:m.to,promotion:m.promotion||'q'});
+    $('lab-analysis-fen').value=chess.fen();$('lab-analysis-message').textContent='Posição final da partida carregada: '+g.title;
+   }catch(e){$('lab-analysis-message').textContent='Não foi possível carregar a partida: '+e.message;}
+  },
+  openExternalAnalysis(){
+   const fen=$('lab-analysis-fen').value.trim();
+   try{
+    new root.Chess(fen);
+    const url='https://lichess.org/analysis/standard/'+fen.replace(/\s+/g,'_');
+    const win=window.open(url,'_blank','noopener,noreferrer');
+    if(!win){$('lab-analysis-message').textContent='O navegador bloqueou a nova aba. Abra o link do Lichess abaixo e cole a FEN.';return;}
+    $('lab-analysis-message').textContent='Posição enviada ao Lichess. Ative a análise do motor na página que abriu.';
+   }catch(e){$('lab-analysis-message').textContent='FEN inválida: '+e.message;}
+  },
+  async queryCloudEval(){
+   const fen=$('lab-analysis-fen').value.trim(), msg=$('lab-analysis-message'), out=$('lab-analysis-results');
+   let chess;
+   try{chess=new root.Chess(fen);}catch(e){msg.textContent='FEN inválida: '+e.message;return;}
+   msg.textContent='Consultando avaliações Stockfish disponíveis…';out.innerHTML='<p class="muted small">Buscando no serviço do Lichess…</p>';
+   try{
+    const url='https://lichess.org/api/cloud-eval?fen='+encodeURIComponent(chess.fen())+'&multiPv=3&variant=standard';
+    const res=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(res.status===404)throw new Error('Essa posição não está no cache de avaliações. Use “Abrir análise completa” para pedir uma análise ao motor no Lichess.');
+    if(!res.ok)throw new Error('O serviço respondeu com HTTP '+res.status+'.');
+    const data=await res.json();
+    if(!Array.isArray(data.pvs)||!data.pvs.length)throw new Error('Não há linhas de avaliação disponíveis para essa posição.');
+    const rows=data.pvs.slice(0,3).map((pv,i)=>{
+      const copy=new root.Chess(chess.fen()), san=[];
+      const uci=(pv.moves||'').trim().split(/\s+/).filter(Boolean);
+      for(const token of uci){if(!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(token))break;try{const m=copy.move({from:token.slice(0,2),to:token.slice(2,4),promotion:token[4]||'q'});san.push(m.san);}catch(e){break;}}
+      const score=pv.mate!==undefined?'Mate em '+pv.mate:(pv.cp!==undefined?(pv.cp/100).toFixed(2)+' peões':'avaliação indisponível');
+      return `<li><strong>Linha ${i+1} · ${score}</strong><br><span>${san.join(' ')||'Sem lances fornecidos'}</span></li>`;
+    }).join('');
+    out.innerHTML=`<h3>Stockfish · cache do Lichess</h3><p class="muted small">Profundidade ${Number(data.depth)||'?'} · ${Number(data.knodes||0).toLocaleString('pt-BR')} milhares de nós</p><ol>${rows}</ol><p class="muted small">Avaliações em relação ao lado indicado pelo serviço. O cache não contém todas as posições.</p>`;
+    msg.textContent='Avaliação recebida. Para cálculo atualizado e análise completa, abra o analisador externo.';
+   }catch(e){out.innerHTML=`<p>${this.escapeText(e.message||'Falha na consulta.')}</p>`;msg.textContent='Consulta encerrada.';}
+  },
+  async queryOpeningExplorer(){
+   const fen=$('lab-analysis-fen').value.trim(), msg=$('lab-analysis-message'), out=$('lab-analysis-results');
+   try{new root.Chess(fen);}catch(e){msg.textContent='FEN inválida: '+e.message;return;}
+   msg.textContent='Consultando banco de partidas do Lichess…';out.innerHTML='<p class="muted small">Buscando lances jogados nesta posição…</p>';
+   try{
+    const url='https://explorer.lichess.ovh/lichess?variant=standard&fen='+encodeURIComponent(fen)+'&moves=8&topGames=0&recentGames=0';
+    const res=await fetch(url,{headers:{'Accept':'application/json'}});
+    if(!res.ok)throw new Error('O explorador respondeu com HTTP '+res.status+'.');
+    const data=await res.json(), moves=data.moves||[];
+    if(!moves.length)throw new Error('Não foram encontrados dados para essa posição. Tente a posição inicial ou uma abertura conhecida.');
+    const total=moves.reduce((n,m)=>n+m.white+m.draws+m.black,0);
+    out.innerHTML=`<h3>Explorador de partidas</h3><p class="muted small">${Number(data.white||0).toLocaleString('pt-BR')} vitórias brancas · ${Number(data.draws||0).toLocaleString('pt-BR')} empates · ${Number(data.black||0).toLocaleString('pt-BR')} vitórias pretas</p><ol>${moves.slice(0,8).map(m=>{const n=m.white+m.draws+m.black;const pct=x=>n?Math.round(x/n*100):0;return `<li><strong>${this.escapeText(m.san)}</strong> · ${n.toLocaleString('pt-BR')} partidas <span class="muted small">(Brancas ${pct(m.white)}% · Empates ${pct(m.draws)}% · Pretas ${pct(m.black)}%)</span></li>`;}).join('')}</ol><p class="muted small">Percentuais calculados a partir dos resultados retornados pelo banco de partidas.</p>`;
+    msg.textContent='Explorador carregado.';
+   }catch(e){out.innerHTML=`<p>${this.escapeText(e.message||'Falha na consulta.')}</p>`;msg.textContent='Consulta encerrada.';}
+  },
+  escapeText(value){return String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));},
+  copyAnalysisFEN(){
+   const fen=$('lab-analysis-fen').value.trim();
+   try{new root.Chess(fen);}catch(e){$('lab-analysis-message').textContent='FEN inválida: '+e.message;return;}
+   const area=$('lab-analysis-fen');area.focus();area.select();
+   let ok=false;try{ok=document.execCommand('copy');}catch(e){}
+   if(ok){$('lab-analysis-message').textContent='FEN copiada.';return;}
+   $('lab-analysis-message').textContent='FEN selecionada. Use Copiar no menu do Android.';
+  },
+  openFEN(){const fen=$('lab-fen').value.trim();try{const session=new XD.GameSession({startFen:fen});$('lab-fen-message').textContent='FEN aceita. Abrindo no Modo Livre…';XD.pendingFree={session,linkedId:null,title:'Posição personalizada'};XD.go('#/livre');}catch(e){$('lab-fen-message').textContent='FEN inválida: '+e.message;}},
+  editSquare(square){if(!this.editorPieces)return;const pieceValue=$('lab-editor-piece').value;const color=pieceValue[0],type=pieceValue[1].toLowerCase();const rank=8-Number(square[1]),file=square.charCodeAt(0)-97;this.editorPieces[rank][file]=this.editorClearMode?null:{color,type,square};this.editorBoard.set({board:this.editorPieces,lastMove:null,check:null});$('lab-editor-message').textContent=this.editorClearMode?`Casa ${square} apagada.`:`Peça colocada em ${square}.`;},
+  editorFenFromBoard(board,turn){const rows=[];for(let r=0;r<8;r++){let row='',empty=0;for(let f=0;f<8;f++){const p=board[r][f];if(!p){empty++;continue;}if(empty){row+=empty;empty=0;}const c=p.type.toLowerCase();row+=p.color==='w'?c.toUpperCase():c;}if(empty)row+=empty;rows.push(row);}return rows.join('/')+' '+turn+' - - 0 1';},
+  generateEditorFEN(open){try{const fen=this.editorFenFromBoard(this.editorPieces,$('lab-editor-turn').value);const checked=new root.Chess(fen);if(checked.board().flat().filter(p=>p&&p.type==='k'&&p.color==='w').length!==1||checked.board().flat().filter(p=>p&&p.type==='k'&&p.color==='b').length!==1)throw new Error('A posição precisa ter exatamente um rei branco e um rei preto.');$('lab-fen').value=fen;$('lab-editor-message').textContent='FEN gerada: '+fen;if(open){const session=new XD.GameSession({startFen:fen});XD.pendingFree={session,linkedId:null,title:'Posição criada no editor visual'};XD.go('#/livre');}}catch(e){$('lab-editor-message').textContent='Não foi possível gerar a posição: '+e.message;}},
+  loadPuzzle(){const p=this.puzzles[this.puzzleIndex%this.puzzles.length];this.puzzle=p;this.puzzleChess=new root.Chess(p.fen);if(!this.puzzleBoard)this.puzzleBoard=new XD.Board($('lab-puzzle-board'),{interactive:true,getTargets:sq=>this.puzzleChess?this.puzzleChess.moves({square:sq,verbose:true}).map(m=>m.to):[],onMove:(from,to)=>this.puzzleMove(from,to)});this.puzzleBoard.setInteractive(true);this.puzzleBoard.set({board:this.puzzleChess.board(),lastMove:null,check:null});$('lab-puzzle-status').textContent='Encontre o lance correto!';$('lab-puzzle-status').classList.remove('end');$('lab-puzzle-explain').textContent='';},
+  puzzleMove(from,to){try{const m=this.puzzleChess.move({from,to,promotion:'q'});if(m.san===this.puzzle.solution||this.puzzleChess.isCheckmate()){this.puzzleSolved++;$('lab-puzzle-status').textContent='Correto! Xeque-mate encontrado. ♕';$('lab-puzzle-status').classList.add('end');$('lab-puzzle-explain').textContent=this.puzzle.explain;this.puzzleBoard.setInteractive(false);}else{$('lab-puzzle-status').textContent='Esse lance é legal, mas não resolve o desafio. Tente outra ideia.';this.puzzleChess.undo();}this.puzzleBoard.set({board:this.puzzleChess.board(),lastMove:null,check:null});}catch(e){XD.ui.toast('Lance inválido.','erro');}},
+  renderStats(){const el=$('lab-stats');if(!el)return;const games=XD.Store.list();const counts={wins:0,losses:0,draws:0,unknown:0,moves:0};for(const g of games){counts.moves+=g.moves.length;if(g.result==='1-0')counts.wins++;else if(g.result==='0-1')counts.losses++;else if(g.result==='1/2-1/2')counts.draws++;else counts.unknown++;}el.innerHTML=`<div class="lab-stat"><strong>${games.length}</strong><span>Partidas salvas</span></div><div class="lab-stat"><strong>${counts.moves}</strong><span>Lances registrados</span></div><div class="lab-stat"><strong>${counts.draws}</strong><span>Empates registrados</span></div><div class="lab-stat"><strong>${this.puzzleSolved}</strong><span>Desafios resolvidos nesta sessão</span></div>`;}
+ };
+ XD.Lab=Lab;
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+
+<script>
+/*
+ * app.js — Ponto de entrada: injeta as peças SVG, faz a navegação entre telas
+ * (roteamento por "hash": #/livre, #/aberturas/italiana …) e atualiza o início.
+ *
+ * Por que hash e não páginas separadas? O botão "Voltar" do Android funciona,
+ * dá para abrir o site direto do arquivo (file://) e não precisa de servidor.
+ */
+(function (root) {
+  'use strict';
+  const XD = root.XD;
+  const $ = (id) => document.getElementById(id);
+
+  const boot = document.getElementById('boot'); if (boot) boot.remove();   // site iniciou: remove o aviso
+  // Peças SVG disponíveis para todo o site
+  document.body.insertAdjacentHTML('afterbegin', XD.Pieces.spriteMarkup());
+
+  const VIEWS = ['home', 'livre', 'aberturas', 'abertura', 'partidas', 'partida', 'laboratorio'];
+
+  /** Tela inicial: contadores reais e atalho para a partida em andamento. */
+  XD.refreshHome = function () {
+    $('home-open-count').textContent = `${root.OpeningsData.OPENINGS.length} aberturas e gambitos com lances verificados, explicados passo a passo.`;
+    const n = XD.Store.list().length;
+    $('home-games-count').textContent = n ? `${n} partida${n === 1 ? '' : 's'} salva${n === 1 ? '' : 's'} neste navegador.` : 'Suas partidas salvas ficam guardadas neste navegador.';
+    const d = XD.Store.loadDraft();
+    const box = $('home-resume');
+    if (d && d.session.length) {
+      box.innerHTML = `<div class="resume"><span>Você tem uma partida em andamento (${d.session.length} lance${d.session.length === 1 ? '' : 's'}).</span>
+        <a class="btn primary sm" href="#/livre">Continuar</a></div>`;
+    } else box.innerHTML = '';
+  };
+
+  /** Mostra uma tela e esconde as outras. */
+  function show(name, navKey) {
+    VIEWS.forEach((v) => { $('view-' + v).hidden = v !== name; });
+    document.querySelectorAll('[data-nav]').forEach((a) => {
+      const on = a.dataset.nav === navKey;
+      a.classList.toggle('on', on);
+      if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    window.scrollTo(0, 0);
+  }
+
+  /**
+   * Navega para uma rota ("#/livre"). Guarda a rota em memória E tenta atualizar o endereço
+   * (pushState faz o botão Voltar do Android funcionar). Se o ambiente não deixar mexer na URL
+   * (alguns visualizadores/iframes), o site continua navegando normalmente.
+   */
+  XD.currentHash = null;
+  XD.go = function (hash) {
+    XD.currentHash = hash;
+    try { history.pushState(null, '', hash); } catch (e) { /* sem URL: segue só em memória */ }
+    route();
+  };
+  const currentRoute = () => (XD.currentHash !== null ? XD.currentHash : location.hash);
+
+  function route() {
+    XD.activeReview = null;
+    const parts = (currentRoute().replace(/^#\/?/, '') || '').split('/');
+    const [section, id] = parts;
+    try {
+      if (!section) { XD.refreshHome(); show('home', 'home'); document.title = 'Meu Xadrez'; }
+      else if (section === 'livre') {
+        show('livre', 'livre'); document.title = 'Modo Livre · Meu Xadrez';
+        const p = XD.pendingFree; XD.pendingFree = null;
+        XD.Free.enter(p);
+      } else if (section === 'aberturas' && !id) { show('aberturas', 'aberturas'); XD.Openings.showList(); document.title = 'Aberturas e Gambitos · Meu Xadrez'; }
+      else if (section === 'aberturas') {
+        if (!XD.Openings.showDetail(id)) { XD.ui.toast('Abertura não encontrada.', 'erro'); XD.go('#/aberturas'); return; }
+        show('abertura', 'aberturas'); XD.activeReview = XD.Openings.review;
+        document.title = XD.Openings.current.nome + ' · Meu Xadrez';
+      } else if (section === 'partidas' && !id) { show('partidas', 'partidas'); XD.Games.showList(); document.title = 'Minhas Partidas · Meu Xadrez'; }
+      else if (section === 'partidas') {
+        if (!XD.Games.showDetail(id)) { XD.ui.toast('Partida não encontrada.', 'erro'); XD.go('#/partidas'); return; }
+        show('partida', 'partidas'); XD.activeReview = XD.Games.review;
+        document.title = XD.Games.current.title + ' · Meu Xadrez';
+      } else if (section === 'laboratorio') {
+        show('laboratorio', 'home'); document.title = 'Laboratório de Xadrez · Meu Xadrez';
+        if (XD.Lab) XD.Lab.enter();
+      } else { XD.go('#/'); }
+    } catch (e) {
+      console.error(e);
+      XD.ui.toast('Ocorreu um erro ao abrir esta tela: ' + e.message, 'erro');
+    }
+  }
+
+  // Atalhos de teclado (computador): ← → navegam pelos lances na revisão; no Modo Livre desfazem/refazem
+  document.addEventListener('keydown', (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey || /^(INPUT|TEXTAREA)$/.test((e.target || {}).tagName) || document.querySelector('.modal-back')) return;
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const left = e.key === 'ArrowLeft';
+    if (XD.activeReview) { XD.activeReview.act(left ? 'prev' : 'next'); e.preventDefault(); }
+    else if (!$('view-livre').hidden) {
+      const f = XD.Free; left ? f.session.undo() : f.session.redo(); f.update(); e.preventDefault();
+    }
+  });
+
+  // Toques em links internos (#/…) passam por XD.go
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest && e.target.closest('a[href^="#/"]');
+    if (!a || e.defaultPrevented || e.button) return;
+    e.preventDefault();
+    XD.go(a.getAttribute('href'));
+  });
+  window.addEventListener('popstate', () => { XD.currentHash = null; route(); });   // botão Voltar
+  window.addEventListener('hashchange', () => { XD.currentHash = null; route(); });
+  if (!XD.Store.available()) XD.ui.toast('Atenção: o navegador bloqueou o armazenamento. As partidas só duram até fechar a página.', 'erro');
+  route();
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+
+
+<style>
+/* Laboratório de xadrez: extensão incremental do projeto original */
+.lab-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin-bottom:8px}.lab-tabs .btn{white-space:nowrap;flex:none}.lab-pane{animation:fade .2s ease}.lab-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lab-controls select,.lab-pane select{width:100%;background:var(--bg-2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px;min-height:44px;font:inherit}.lab-toolbar{grid-template-columns:repeat(2,1fr)}.lab-inner{margin-top:14px}.lab-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.lab-stat{padding:14px;border-radius:12px;background:var(--surface-2);border:1px solid var(--line)}.lab-stat strong{display:block;font-size:1.55rem;color:var(--gold-2)}.lab-stat span{font-size:.86rem;color:var(--muted)}@media(min-width:760px){.lab-controls{grid-template-columns:repeat(2,minmax(160px,240px))}.lab-toolbar{grid-template-columns:repeat(4,1fr)}.lab-stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.lab-rule{border:0;border-top:1px solid var(--line);margin:24px 0}.lab-pane ol{padding-left:22px}.lab-pane ol li{margin:8px 0}.lab-pane a{color:var(--gold-2);text-decoration:underline}.editor-board-wrap{width:min(100%,560px);margin:14px auto;touch-action:manipulation}.editor-board-wrap .board{cursor:pointer}.editor-board-wrap .sq{cursor:pointer}.editor-board-wrap .sq:active{filter:brightness(1.15)}
+.lab-clock-controls{display:grid;grid-template-columns:1fr;gap:10px;margin:12px 0}.lab-clocks{display:grid;grid-template-columns:1fr 1fr;gap:10px}.lab-clock{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2)}.lab-clock span{color:var(--muted);font-size:.9rem}.lab-clock strong{font-variant-numeric:tabular-nums;font-size:1.45rem}.lab-clock.active{border-color:var(--gold-2);box-shadow:inset 0 0 0 1px var(--gold-2)}.lab-clock.flag strong{color:#e45d5d}@media(min-width:760px){.lab-clock-controls{grid-template-columns:minmax(180px,240px) 1fr;align-items:end}}
+</style>
+</body></html>
